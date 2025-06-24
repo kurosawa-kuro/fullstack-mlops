@@ -25,16 +25,14 @@ def run_command(command, description):
 
     try:
         # 仮想環境内のPythonを使用
-        if command.startswith('python '):
-            command = command.replace('python ', '.venv/bin/python ')
-        
+        if command.startswith("python "):
+            command = command.replace("python ", ".venv/bin/python ")
+
         # コマンドをリストに分割してshell=Trueを避ける
         if isinstance(command, str):
             command = command.split()
-        
-        result = subprocess.run(
-            command, check=True, capture_output=True, text=True
-        )
+
+        result = subprocess.run(command, check=True, capture_output=True, text=True)
         logger.info(f"✅ {description} 完了")
         if result.stdout:
             logger.debug(f"出力: {result.stdout}")
