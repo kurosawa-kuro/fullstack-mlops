@@ -516,18 +516,18 @@ python -m jupyterlab
 
 ```bash
 python src/ml/data/run_processing.py \
-  --input data/raw/house_data.csv \
-  --output data/processed/cleaned_house_data.csv
+  --input src/ml/data/raw/house_data.csv \
+  --output src/ml/data/processed/cleaned_house_data.csv
 ```
 
 **期待される出力例：**
 ```
-2025-06-24 06:52:02,179 - data-processor - INFO - Loading data from data/raw/house_data.csv
+2025-06-24 06:52:02,179 - data-processor - INFO - Loading data from src/ml/data/raw/house_data.csv
 2025-06-24 06:52:02,181 - data-processor - INFO - Loaded data with shape: (84, 7)
 2025-06-24 06:52:02,181 - data-processor - INFO - Cleaning dataset
 2025-06-24 06:52:02,183 - data-processor - INFO - Found 7 outliers in price column
 2025-06-24 06:52:02,183 - data-processor - INFO - Removed outliers. New dataset shape: (77, 7)
-2025-06-24 06:52:02,186 - data-processor - INFO - Saved processed data to data/processed/cleaned_house_data.csv
+2025-06-24 06:52:02,186 - data-processor - INFO - Saved processed data to src/ml/data/processed/cleaned_house_data.csv
 ```
 
 ---
@@ -538,14 +538,14 @@ python src/ml/data/run_processing.py \
 
 ```bash
 python src/ml/features/engineer.py \
-  --input data/processed/cleaned_house_data.csv \
-  --output data/processed/featured_house_data.csv \
-  --preprocessor models/trained/preprocessor.pkl
+  --input src/ml/data/processed/cleaned_house_data.csv \
+  --output src/ml/data/processed/featured_house_data.csv \
+  --preprocessor src/ml/models/trained/preprocessor.pkl
 ```
 
 **期待される出力例：**
 ```
-2025-06-24 06:55:07,608 - feature-engineering - INFO - Loading data from data/processed/cleaned_house_data.csv
+2025-06-24 06:55:07,608 - feature-engineering - INFO - Loading data from src/ml/data/processed/cleaned_house_data.csv
 2025-06-24 06:55:07,610 - feature-engineering - INFO - Creating new features
 2025-06-24 06:55:07,611 - feature-engineering - INFO - Created 'house_age' feature
 2025-06-24 06:55:07,611 - feature-engineering - INFO - Created 'price_per_sqft' feature
@@ -553,8 +553,8 @@ python src/ml/features/engineer.py \
 2025-06-24 06:55:07,612 - feature-engineering - INFO - Created featured dataset with shape: (77, 10)
 2025-06-24 06:55:07,612 - feature-engineering - INFO - Creating preprocessor pipeline
 2025-06-24 06:55:07,618 - feature-engineering - INFO - Fitted the preprocessor and transformed the features
-2025-06-24 06:55:07,619 - feature-engineering - INFO - Saved preprocessor to models/trained/preprocessor.pkl
-2025-06-24 06:55:07,621 - feature-engineering - INFO - Saved fully preprocessed data to data/processed/featured_house_data.csv
+2025-06-24 06:55:07,619 - feature-engineering - INFO - Saved preprocessor to src/ml/models/trained/preprocessor.pkl
+2025-06-24 06:55:07,621 - feature-engineering - INFO - Saved fully preprocessed data to src/ml/data/processed/featured_house_data.csv
 ```
 
 ---
@@ -566,8 +566,8 @@ python src/ml/features/engineer.py \
 ```bash
 python src/ml/models/train_model.py \
   --config configs/model_config.yaml \
-  --data data/processed/featured_house_data.csv \
-  --models-dir models \
+  --data src/ml/data/processed/featured_house_data.csv \
+  --models-dir src/ml/models \
   --mlflow-tracking-uri http://192.168.1.131:5555
 ```
 
@@ -575,7 +575,7 @@ python src/ml/models/train_model.py \
 ```
 2025-06-24 07:02:09,052 - INFO - Training model: RandomForest
 2025-06-24 07:02:10,699 - INFO - Registering model to MLflow Model Registry...
-2025-06-24 07:02:10,997 - INFO - Saved trained model to: models/trained/house_price_prediction.pkl
+2025-06-24 07:02:10,997 - INFO - Saved trained model to: src/ml/models/trained/house_price_prediction.pkl
 2025-06-24 07:02:10,997 - INFO - Final MAE: 13977.50, R²: 0.9882
 🏃 View run final_training at: http://192.168.1.131:5555/#/experiments/1/runs/f0f4aa121cc5405f93fcc03e77962b89
 🧪 View experiment at: http://192.168.1.131:5555/#/experiments/1
@@ -596,10 +596,10 @@ python src/ml/models/train_model.py \
 3. 実行履歴、メトリクス、モデルバージョンを確認
 
 #### 生成されたファイル
-- `data/processed/cleaned_house_data.csv`: クリーニング済みデータ
-- `data/processed/featured_house_data.csv`: 特徴量エンジニアリング済みデータ
-- `models/trained/preprocessor.pkl`: 前処理器
-- `models/trained/house_price_prediction.pkl`: 訓練済みモデル
+- `src/ml/data/processed/cleaned_house_data.csv`: クリーニング済みデータ
+- `src/ml/data/processed/featured_house_data.csv`: 特徴量エンジニアリング済みデータ
+- `src/ml/models/trained/preprocessor.pkl`: 前処理器
+- `src/ml/models/trained/house_price_prediction.pkl`: 訓練済みモデル
 
 ---
 
@@ -617,7 +617,7 @@ FastAPIとStreamlitアプリのコードは、すでに`src/api`と`src/ui`に�
 
 2. **訓練済みモデルが存在することを確認：**
    ```bash
-   ls -la models/trained/
+   ls -la src/ml/models/trained/
    # 以下のファイルが存在することを確認：
    # - house_price_prediction.pkl
    # - preprocessor.pkl

@@ -6,7 +6,7 @@ on:
     paths:
       - 'src/**'
       - 'configs/**'
-      - 'data/**'
+      - 'src/ml/data/**'
       - 'tests/**'
       - 'requirements.txt'
       - '.github/workflows/ml-cicd.yml'
@@ -15,7 +15,7 @@ on:
     paths:
       - 'src/**'
       - 'configs/**'
-      - 'data/**'
+      - 'src/ml/data/**'
       - 'tests/**'
       - 'requirements.txt'
       - '.github/workflows/ml-cicd.yml'
@@ -97,9 +97,52 @@ jobs:
           pip install pytest pytest-cov
           pip install -r requirements.txt
 
-      - name: Run basic tests (without model files)
+      - name: Create necessary directories
         run: |
-          pytest tests/ -v --cov=src --cov-report=xml --cov-report=html -k "not test_model_files_exist and not test_model_can_load and not test_model_can_predict"
+          mkdir -p src/ml/data/raw
+          mkdir -p src/ml/data/processed
+          mkdir -p src/ml/models/trained
+
+      - name: Create sample data for testing
+        run: |
+          # サンプルデータを作成
+          python -c "
+          import pandas as pd
+          import os
+          
+          # サンプルデータを作成
+          sample_data = pd.DataFrame({
+              'sqft': [1500, 2000, 1200, 1800, 2200],
+              'bedrooms': [3, 4, 2, 3, 4],
+              'bathrooms': [2, 3, 1, 2, 3],
+              'year_built': [2010, 2015, 2008, 2012, 2018],
+              'location': ['Suburban', 'Urban', 'Rural', 'Suburban', 'Urban'],
+              'condition': ['Good', 'Excellent', 'Fair', 'Good', 'Excellent'],
+              'price': [300000, 450000, 200000, 350000, 500000]
+          })
+          
+          # 生データを保存
+          os.makedirs('src/ml/data/raw', exist_ok=True)
+          sample_data.to_csv('src/ml/data/raw/house_data.csv', index=False)
+          print('✅ サンプルデータを作成しました')
+          "
+
+      - name: Run data processing for testing
+        run: |
+          # データ処理を実行
+          python src/ml/data/run_processing.py \
+            --input src/ml/data/raw/house_data.csv \
+            --output src/ml/data/processed/cleaned_house_data.csv
+          
+          # 特徴量エンジニアリングを実行
+          python src/ml/features/engineer.py \
+            --input src/ml/data/processed/cleaned_house_data.csv \
+            --output src/ml/data/processed/featured_house_data.csv \
+            --preprocessor src/ml/models/trained/preprocessor.pkl
+
+      - name: Run basic tests
+        run: |
+          pytest tests/ -v --cov=src --cov-report=xml --cov-report=html
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
@@ -137,8 +180,8 @@ jobs:
 
       - name: Create necessary directories
         run: |
-          mkdir -p data/processed
-          mkdir -p models/trained
+          mkdir -p src/ml/data/processed
+          mkdir -p src/ml/models/trained
 
       - name: Run ML pipeline
         run: |
@@ -146,11 +189,11 @@ jobs:
 
       - name: Verify model artifacts
         run: |
-          ls -la models/trained/
+          ls -la src/ml/models/trained/
           python -c "
           import joblib
-          model = joblib.load('models/trained/house_price_prediction.pkl')
-          preprocessor = joblib.load('models/trained/preprocessor.pkl')
+          model = joblib.load('src/ml/models/trained/house_price_prediction.pkl')
+          preprocessor = joblib.load('src/ml/models/trained/preprocessor.pkl')
           print('✅ モデルと前処理器の読み込み成功')
           "
 
@@ -159,15 +202,15 @@ jobs:
         with:
           name: trained-models
           path: |
-            models/trained/house_price_prediction.pkl
-            models/trained/preprocessor.pkl
+            src/ml/models/trained/house_price_prediction.pkl
+            src/ml/models/trained/preprocessor.pkl
           retention-days: 30
 
       - name: Upload processed data
         uses: actions/upload-artifact@v4
         with:
           name: processed-data
-          path: data/processed/
+          path: src/ml/data/processed/
           retention-days: 30
 
   # モデル性能テスト
@@ -193,13 +236,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: trained-models
-          path: models/trained/
+          path: src/ml/models/trained/
 
       - name: Download processed data
         uses: actions/download-artifact@v4
         with:
           name: processed-data
-          path: data/processed/
+          path: src/ml/data/processed/
 
       - name: Run model performance tests
         run: |
@@ -210,8 +253,8 @@ jobs:
       - name: Model performance summary
         run: |
           echo "🎯 モデル性能テスト完了"
-          echo "📊 モデルファイルサイズ: $(ls -lh models/trained/house_price_prediction.pkl | awk '{print $5}')"
-          echo "📊 前処理器ファイルサイズ: $(ls -lh models/trained/preprocessor.pkl | awk '{print $5}')"
+          echo "📊 モデルファイルサイズ: $(ls -lh src/ml/models/trained/house_price_prediction.pkl | awk '{print $5}')"
+          echo "📊 前処理器ファイルサイズ: $(ls -lh src/ml/models/trained/preprocessor.pkl | awk '{print $5}')"
 
   # GitHub Release作成（タグプッシュ時）
   create-release:
@@ -226,21 +269,21 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: trained-models
-          path: models/trained/
+          path: src/ml/models/trained/
 
       - name: Download processed data
         uses: actions/download-artifact@v4
         with:
           name: processed-data
-          path: data/processed/
+          path: src/ml/data/processed/
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            models/trained/house_price_prediction.pkl
-            models/trained/preprocessor.pkl
-            data/processed/featured_house_data.csv
+            src/ml/models/trained/house_price_prediction.pkl
+            src/ml/models/trained/preprocessor.pkl
+            src/ml/data/processed/featured_house_data.csv
           body: |
             ## 🏠 House Price Prediction Model Release
             

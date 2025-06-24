@@ -147,7 +147,7 @@ setup-dev: install
 check-model:
 	@echo "📊 モデル性能確認中..."
 	@if [ -d ".venv" ]; then \
-		.venv/bin/python -c "import joblib; import pandas as pd; model = joblib.load('models/trained/house_price_prediction.pkl'); preprocessor = joblib.load('models/trained/preprocessor.pkl'); print('✅ モデル読み込み成功'); sample_data = pd.DataFrame({'sqft': [1500], 'bedrooms': [3], 'bathrooms': [2], 'year_built': [2010], 'location': ['Suburban'], 'condition': ['Good']}); X_transformed = preprocessor.transform(sample_data); prediction = model.predict(X_transformed); print(f'📈 サンプル予測結果: \$${prediction[0]:,.2f}')"; \
+		.venv/bin/python -c "import joblib; import pandas as pd; model = joblib.load('src/ml/models/trained/house_price_prediction.pkl'); preprocessor = joblib.load('src/ml/models/trained/preprocessor.pkl'); print('✅ モデル読み込み成功'); sample_data = pd.DataFrame({'sqft': [1500], 'bedrooms': [3], 'bathrooms': [2], 'year_built': [2010], 'location': ['Suburban'], 'condition': ['Good']}); X_transformed = preprocessor.transform(sample_data); prediction = model.predict(X_transformed); print(f'📈 サンプル予測結果: $${prediction[0]:,.2f}')"; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
 		exit 1; \
@@ -159,7 +159,7 @@ status:
 	@echo "📋 パイプライン状態確認中..."
 	@echo "📁 必要なファイル:"
 	@ls -la configs/model_config.yaml 2>/dev/null || echo "❌ configs/model_config.yaml が見つかりません"
-	@ls -la data/raw/house_data.csv 2>/dev/null || echo "❌ data/raw/house_data.csv が見つかりません"
-	@ls -la models/trained/house_price_prediction.pkl 2>/dev/null || echo "❌ 学習済みモデルが見つかりません"
-	@ls -la models/trained/preprocessor.pkl 2>/dev/null || echo "❌ 前処理器が見つかりません"
+	@ls -la src/ml/data/raw/house_data.csv 2>/dev/null || echo "❌ src/ml/data/raw/house_data.csv が見つかりません"
+	@ls -la src/ml/models/trained/house_price_prediction.pkl 2>/dev/null || echo "❌ 学習済みモデルが見つかりません"
+	@ls -la src/ml/models/trained/preprocessor.pkl 2>/dev/null || echo "❌ 前処理器が見つかりません"
 	@echo "✅ 状態確認完了" 

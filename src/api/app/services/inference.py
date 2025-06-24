@@ -13,8 +13,8 @@ import pandas as pd
 from ..models.schemas import HousePredictionRequest, PredictionResponse
 
 # Load model and preprocessor
-MODEL_PATH = "models/trained/house_price_prediction.pkl"
-PREPROCESSOR_PATH = "models/trained/preprocessor.pkl"
+MODEL_PATH = "src/ml/models/trained/house_price_prediction.pkl"
+PREPROCESSOR_PATH = "src/ml/models/trained/preprocessor.pkl"
 
 try:
     model = joblib.load(MODEL_PATH)

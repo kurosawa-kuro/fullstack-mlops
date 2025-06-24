@@ -25,17 +25,17 @@ src/ml/
 
 ### 1. データ処理
 ```bash
-python src/ml/data/run_processing.py --input data/raw/house_data.csv --output data/processed/cleaned_house_data.csv
+python src/ml/data/run_processing.py --input src/ml/data/raw/house_data.csv --output src/ml/data/processed/cleaned_house_data.csv
 ```
 
 ### 2. 特徴量エンジニアリング
 ```bash
-python src/ml/features/engineer.py --input data/processed/cleaned_house_data.csv --output data/processed/featured_house_data.csv --preprocessor models/trained/preprocessor.pkl
+python src/ml/features/engineer.py --input src/ml/data/processed/cleaned_house_data.csv --output src/ml/data/processed/featured_house_data.csv --preprocessor src/ml/models/trained/preprocessor.pkl
 ```
 
 ### 3. モデル訓練
 ```bash
-python src/ml/models/train_model.py --config configs/model_config.yaml --data data/processed/featured_house_data.csv --models-dir models
+python src/ml/models/train_model.py --config configs/model_config.yaml --data src/ml/data/processed/featured_house_data.csv --models-dir src/ml/models
 ```
 
 ### 4. 全パイプライン実行

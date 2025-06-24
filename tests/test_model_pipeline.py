@@ -11,8 +11,8 @@ class TestModelPipeline:
 
     def test_model_files_exist(self):
         """学習済みモデルファイルが存在することを確認"""
-        model_path = "models/trained/house_price_prediction.pkl"
-        preprocessor_path = "models/trained/preprocessor.pkl"
+        model_path = "src/ml/models/trained/house_price_prediction.pkl"
+        preprocessor_path = "src/ml/models/trained/preprocessor.pkl"
 
         assert os.path.exists(model_path), f"モデルファイルが見つかりません: {model_path}"
         assert os.path.exists(
@@ -21,8 +21,8 @@ class TestModelPipeline:
 
     def test_model_can_load(self):
         """モデルが正常に読み込めることを確認"""
-        model_path = "models/trained/house_price_prediction.pkl"
-        preprocessor_path = "models/trained/preprocessor.pkl"
+        model_path = "src/ml/models/trained/house_price_prediction.pkl"
+        preprocessor_path = "src/ml/models/trained/preprocessor.pkl"
 
         try:
             model = joblib.load(model_path)
@@ -34,8 +34,8 @@ class TestModelPipeline:
 
     def test_model_can_predict(self):
         """モデルが予測を実行できることを確認"""
-        model_path = "models/trained/house_price_prediction.pkl"
-        preprocessor_path = "models/trained/preprocessor.pkl"
+        model_path = "src/ml/models/trained/house_price_prediction.pkl"
+        preprocessor_path = "src/ml/models/trained/preprocessor.pkl"
 
         # テスト用のサンプルデータ
         sample_data = pd.DataFrame(
@@ -94,14 +94,14 @@ class TestModelPipeline:
 
     def test_processed_data_exists(self):
         """処理済みデータファイルが存在することを確認"""
-        processed_data_path = "data/processed/featured_house_data.csv"
+        processed_data_path = "src/ml/data/processed/featured_house_data.csv"
         assert os.path.exists(
             processed_data_path
         ), f"処理済みデータが見つかりません: {processed_data_path}"
 
     def test_processed_data_valid(self):
         """処理済みデータが有効なCSV形式であることを確認"""
-        processed_data_path = "data/processed/featured_house_data.csv"
+        processed_data_path = "src/ml/data/processed/featured_house_data.csv"
 
         try:
             df = pd.read_csv(processed_data_path)
