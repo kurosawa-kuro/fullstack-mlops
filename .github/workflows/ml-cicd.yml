@@ -140,6 +140,10 @@ jobs:
             --output src/ml/data/processed/featured_house_data.csv \
             --preprocessor src/ml/models/trained/preprocessor.pkl
 
+      - name: Run model training for testing
+        run: |
+          python src/ml/pipeline/train_pipeline.py
+
       - name: Run basic tests
         run: |
           pytest src/tests/ -v --cov=src --cov-report=xml --cov-report=html
