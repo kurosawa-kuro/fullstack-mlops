@@ -250,9 +250,9 @@ jobs:
 
       - name: Run model performance tests
         run: |
-          python -m pytest tests/test_model_pipeline.py::TestModelPipeline::test_model_files_exist -v
-          python -m pytest tests/test_model_pipeline.py::TestModelPipeline::test_model_can_load -v
-          python -m pytest tests/test_model_pipeline.py::TestModelPipeline::test_model_can_predict -v
+          python -m pytest src/tests/test_ml_pipeline.py::TestModelPipeline::test_model_files_exist -v
+          python -m pytest src/tests/test_ml_pipeline.py::TestModelPipeline::test_model_can_load -v
+          python -m pytest src/tests/test_ml_pipeline.py::TestModelPipeline::test_model_can_predict -v
 
       - name: Model performance summary
         run: |
