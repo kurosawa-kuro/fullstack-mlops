@@ -112,13 +112,13 @@ jobs:
           
           # サンプルデータを作成
           sample_data = pd.DataFrame({
-              'sqft': [1500, 2000, 1200, 1800, 2200],
-              'bedrooms': [3, 4, 2, 3, 4],
-              'bathrooms': [2, 3, 1, 2, 3],
-              'year_built': [2010, 2015, 2008, 2012, 2018],
-              'location': ['Suburban', 'Urban', 'Rural', 'Suburban', 'Urban'],
-              'condition': ['Good', 'Excellent', 'Fair', 'Good', 'Excellent'],
-              'price': [300000, 450000, 200000, 350000, 500000]
+              'sqft': [1500, 2000, 1200, 1800, 2200, 1600, 2400, 1400, 1900, 2100],
+              'bedrooms': [3, 4, 2, 3, 4, 3, 5, 2, 3, 4],
+              'bathrooms': [2, 3, 1, 2, 3, 2, 4, 1, 2, 3],
+              'year_built': [2010, 2015, 2008, 2012, 2018, 2011, 2020, 2009, 2013, 2017],
+              'location': ['Suburban', 'Urban', 'Rural', 'Suburban', 'Urban', 'Suburban', 'Urban', 'Rural', 'Suburban', 'Urban'],
+              'condition': ['Good', 'Excellent', 'Fair', 'Good', 'Excellent', 'Good', 'Excellent', 'Fair', 'Good', 'Excellent'],
+              'price': [300000, 450000, 200000, 350000, 500000, 320000, 550000, 180000, 380000, 480000]
           })
           
           # 生データを保存
@@ -184,8 +184,33 @@ jobs:
 
       - name: Create necessary directories
         run: |
+          mkdir -p src/ml/data/raw
           mkdir -p src/ml/data/processed
           mkdir -p src/ml/models/trained
+
+      - name: Create sample data
+        run: |
+          # サンプルデータを作成
+          python -c "
+          import pandas as pd
+          import os
+          
+          # サンプルデータを作成
+          sample_data = pd.DataFrame({
+              'sqft': [1500, 2000, 1200, 1800, 2200, 1600, 2400, 1400, 1900, 2100],
+              'bedrooms': [3, 4, 2, 3, 4, 3, 5, 2, 3, 4],
+              'bathrooms': [2, 3, 1, 2, 3, 2, 4, 1, 2, 3],
+              'year_built': [2010, 2015, 2008, 2012, 2018, 2011, 2020, 2009, 2013, 2017],
+              'location': ['Suburban', 'Urban', 'Rural', 'Suburban', 'Urban', 'Suburban', 'Urban', 'Rural', 'Suburban', 'Urban'],
+              'condition': ['Good', 'Excellent', 'Fair', 'Good', 'Excellent', 'Good', 'Excellent', 'Fair', 'Good', 'Excellent'],
+              'price': [300000, 450000, 200000, 350000, 500000, 320000, 550000, 180000, 380000, 480000]
+          })
+          
+          # 生データを保存
+          os.makedirs('src/ml/data/raw', exist_ok=True)
+          sample_data.to_csv('src/ml/data/raw/house_data.csv', index=False)
+          print('✅ サンプルデータを作成しました')
+          "
 
       - name: Run ML pipeline
         run: |
