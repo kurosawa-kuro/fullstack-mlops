@@ -98,7 +98,7 @@ clean:
 train:
 	@echo "🔧 モデル訓練中（既存モデルがあればスキップ）..."
 	@if [ -d ".venv" ]; then \
-		.venv/bin/python src/ml/pipeline/train_pipeline.py; \
+		.venv/bin/python src/ml/pipeline/train_pipeline.py --data-dir src/ml/data --models-dir src/ml/models; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
 		exit 1; \
@@ -109,7 +109,7 @@ train:
 train-force:
 	@echo "🔧 モデル強制再訓練中..."
 	@if [ -d ".venv" ]; then \
-		.venv/bin/python src/ml/pipeline/train_pipeline.py --force-retrain; \
+		.venv/bin/python src/ml/pipeline/train_pipeline.py --force-retrain --data-dir src/ml/data --models-dir src/ml/models; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
 		exit 1; \

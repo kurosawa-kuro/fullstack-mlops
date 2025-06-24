@@ -66,8 +66,8 @@ def check_model_exists(models_dir):
 
 def main():
     parser = argparse.ArgumentParser(description="MLモデルパイプライン実行")
-    parser.add_argument("--data-dir", default="data", help="データディレクトリ")
-    parser.add_argument("--models-dir", default="models", help="モデル保存ディレクトリ")
+    parser.add_argument("--data-dir", default="src/ml/data", help="データディレクトリ")
+    parser.add_argument("--models-dir", default="src/ml/models", help="モデル保存ディレクトリ")
     parser.add_argument("--config", default="configs/model_config.yaml", help="設定ファイル")
     parser.add_argument(
         "--skip-data-processing", action="store_true", help="データ処理をスキップ"
