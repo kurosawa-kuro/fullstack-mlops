@@ -73,12 +73,12 @@ class TestModelPipeline:
 
     def test_config_file_exists(self):
         """設定ファイルが存在することを確認"""
-        config_path = "configs/model_config.yaml"
+        config_path = "src/configs/model.yaml"
         assert os.path.exists(config_path), f"設定ファイルが見つかりません: {config_path}"
 
     def test_config_file_valid(self):
         """設定ファイルが有効なYAML形式であることを確認"""
-        config_path = "configs/model_config.yaml"
+        config_path = "src/configs/model.yaml"
 
         try:
             with open(config_path, "r") as f:
