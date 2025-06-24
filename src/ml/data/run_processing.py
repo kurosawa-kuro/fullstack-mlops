@@ -3,7 +3,6 @@ import argparse  # コマンドライン引数を解析するためのモジュ�
 import logging  # ログ出力機能を提供するモジュール
 from pathlib import Path  # ファイルパス操作のためのモジュール
 
-import numpy as np  # 数値計算ライブラリ
 import pandas as pd  # データ分析ライブラリ
 
 # Set up logging

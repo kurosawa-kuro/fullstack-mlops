@@ -11,8 +11,8 @@ import sklearn  # scikit-learnライブラリ
 import xgboost as xgb  # XGBoostライブラリ
 import yaml  # YAMLファイル読み込みライブラリ
 from mlflow.tracking import MlflowClient  # MLflowクライアント
-from sklearn.ensemble import (GradientBoostingRegressor,  # アンサンブル学習アルゴリズム
-                              RandomForestRegressor)
+from sklearn.ensemble import GradientBoostingRegressor  # アンサンブル学習アルゴリズム
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression  # 線形回帰アルゴリズム
 from sklearn.metrics import mean_absolute_error, r2_score  # 評価指標
 from sklearn.model_selection import train_test_split  # データ分割機能
