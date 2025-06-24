@@ -81,7 +81,7 @@ def main():
             processed_data_path = f"{args.data_dir}/processed/cleaned_house_data.csv"
 
             run_command(
-                f"python src/data/run_processing.py --input {raw_data_path} --output {processed_data_path}",
+                f"python src/ml/data/run_processing.py --input {raw_data_path} --output {processed_data_path}",
                 "データ処理",
             )
         else:
@@ -99,7 +99,7 @@ def main():
             os.makedirs(os.path.dirname(preprocessor_path), exist_ok=True)
 
             run_command(
-                f"python src/features/engineer.py --input {processed_data_path} --output {featured_data_path} --preprocessor {preprocessor_path}",
+                f"python src/ml/features/engineer.py --input {processed_data_path} --output {featured_data_path} --preprocessor {preprocessor_path}",
                 "特徴量エンジニアリング",
             )
         else:
@@ -110,7 +110,7 @@ def main():
         featured_data_path = f"{args.data_dir}/processed/featured_house_data.csv"
 
         run_command(
-            f"python src/models/train_model.py --config {args.config} --data {featured_data_path} --models-dir {args.models_dir}",
+            f"python src/ml/models/train_model.py --config {args.config} --data {featured_data_path} --models-dir {args.models_dir}",
             "モデル訓練",
         )
 

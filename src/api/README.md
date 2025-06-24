@@ -1,26 +1,61 @@
-## Intructions to build Container Image for this FastAPI App 
+# House Price Prediction API
 
-Create the Dockerfile in the root of the source code (`house-prcice-predictor`). 
+## プロジェクト構成
 
-Following is all the information you would need to start building the container image for this app 
+```
+src/api/
+├── app/
+│   ├── __init__.py
+│   ├── main.py              # FastAPIアプリケーション
+│   ├── models/              # データモデル
+│   │   ├── __init__.py
+│   │   └── schemas.py       # Pydanticスキーマ
+│   ├── services/            # ビジネスロジック
+│   │   ├── __init__.py
+│   │   └── inference.py     # 推論サービス
+│   └── utils/               # ユーティリティ
+│       ├── __init__.py
+│       └── helpers.py       # ヘルパー関数
+├── requirements.txt
+├── Dockerfile
+└── README.md
+```
 
+## Dockerイメージのビルド手順
 
-  * Base Image : `python:3.11-slim`
-  * To install dependencies: `pip install requirements.txt`
-  * Port: `8000`
-  * Launch Command : `uvicorn main:app --host 0.0.0.0 --port 8000`
+### 前提条件
+- Base Image: `python:3.12-slim`
+- 依存関係のインストール: `pip install requirements.txt`
+- ポート: `8000`
+- 起動コマンド: `uvicorn app.main:app --host 0.0.0.0 --port 8000`
 
-Directory structure inside the container should look like this 
-
+### コンテナ内のディレクトリ構造
 ```
 /app
-  main.py
-  schemas.py
-  inference.py
-  requirements.txt
-  /models
-     /trained
-         house_price_model.pkl
-         preprocessor.pkl
+├── app/
+│   ├── main.py
+│   ├── models/
+│   │   └── schemas.py
+│   ├── services/
+│   │   └── inference.py
+│   └── utils/
+│       └── helpers.py
+├── requirements.txt
+└── models/
+    └── trained/
+        ├── house_price_prediction.pkl
+        └── preprocessor.pkl
 ```
+
+## API エンドポイント
+
+- `GET /health`: ヘルスチェック
+- `POST /predict`: 単一予測
+- `POST /batch-predict`: バッチ予測
+
+## 開発者情報
+
+- **Author**: Gourav Shah
+- **Organization**: School of Devops
+- **License**: Apache 2.0
 

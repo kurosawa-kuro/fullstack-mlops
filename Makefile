@@ -96,7 +96,7 @@ clean:
 train:
 	@echo "🔧 モデル訓練中..."
 	@if [ -d ".venv" ]; then \
-		.venv/bin/python src/train_pipeline.py; \
+		.venv/bin/python src/ml/pipeline/train_pipeline.py; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
 		exit 1; \

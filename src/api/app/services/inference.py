@@ -9,7 +9,8 @@ from datetime import datetime
 
 import joblib
 import pandas as pd
-from schemas import HousePredictionRequest, PredictionResponse
+
+from ..models.schemas import HousePredictionRequest, PredictionResponse
 
 # Load model and preprocessor
 MODEL_PATH = "models/trained/house_price_prediction.pkl"
@@ -82,4 +83,4 @@ def batch_predict(requests: list[HousePredictionRequest]) -> list[float]:
 
     # Make predictions
     predictions = model.predict(processed_features)
-    return predictions.tolist()
+    return predictions.tolist() 

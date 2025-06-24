@@ -7,8 +7,9 @@ using a trained machine learning model.
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from inference import batch_predict, predict_price
-from schemas import HousePredictionRequest, PredictionResponse
+
+from .models.schemas import HousePredictionRequest, PredictionResponse
+from .services.inference import batch_predict, predict_price
 
 # Initialize FastAPI app with metadata
 app = FastAPI(
@@ -76,4 +77,4 @@ async def batch_predict_endpoint(requests: list[HousePredictionRequest]):
     Returns:
         list: List of predicted house prices
     """
-    return batch_predict(requests)
+    return batch_predict(requests) 
