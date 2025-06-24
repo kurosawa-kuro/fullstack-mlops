@@ -63,7 +63,7 @@ lint:
 	@if [ -d ".venv" ]; then \
 		.venv/bin/flake8 src/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics; \
 		.venv/bin/flake8 src/ tests/ --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics; \
-		.venv/bin/mypy src/ --ignore-missing-imports; \
+		.venv/bin/mypy src/ tests/; \
 		.venv/bin/bandit -r src/ --severity-level high; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
