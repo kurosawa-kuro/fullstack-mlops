@@ -57,8 +57,8 @@ house-price-predictor/
 ├── models/                 # 訓練済みモデルと前処理器
 ├── notebooks/              # 実験用Jupyterノートブック（オプション）
 ├── src/
-│   ├── api/                # FastAPIアプリケーション
-│   ├── ui/                 # Streamlitフロントエンド
+│   ├── services/api/      # FastAPIアプリケーション
+│   ├── services/ui/       # Streamlitフロントエンド
 │   └── ml/                 # 機械学習関連
 │       ├── data/           # データクリーニングと前処理スクリプト
 │       ├── features/       # 特徴量エンジニアリングパイプライン
@@ -283,7 +283,7 @@ pip._vendor.pyproject_hooks._impl.BackendUnavailable: Cannot import 'setuptools.
 FileNotFoundError: [Errno 2] No such file or directory: 'models/trained/house_price_model.pkl'
 ```
 
-**解決策：** `src/api/inference.py`のモデルファイル名を`house_price_prediction.pkl`に修正済みです。
+**解決策：** `src/services/api/inference.py`のモデルファイル名を`house_price_prediction.pkl`に修正済みです。
 
 #### 7. コンテナが再起動を繰り返す
 ```bash
@@ -605,7 +605,7 @@ python src/ml/models/train_model.py \
 
 ## 🚀 FastAPIとStreamlitアプリケーションの構築
 
-FastAPIとStreamlitアプリのコードは、すでに`src/api`と`src/ui`に用意されています。これらのアプリを構築して起動するには：
+FastAPIとStreamlitアプリのコードは、すでに`src/services/api`と`src/services/ui`に用意されています。これらのアプリを構築して起動するには：
 
 ### 📋 前提条件
 
@@ -685,7 +685,7 @@ pip._vendor.pyproject_hooks._impl.BackendUnavailable: Cannot import 'setuptools.
 FileNotFoundError: [Errno 2] No such file or directory: 'models/trained/house_price_model.pkl'
 ```
 
-**解決策：** `src/api/inference.py`のモデルファイル名を`house_price_prediction.pkl`に修正済みです。
+**解決策：** `src/services/api/inference.py`のモデルファイル名を`house_price_prediction.pkl`に修正済みです。
 
 #### 3. コンテナが再起動を繰り返す
 
@@ -952,7 +952,7 @@ git push origin v1.0.0
 on:
   push:
     branches: [main, master, develop]
-    paths: ['src/**', 'configs/**', 'data/**', 'tests/**']
+    paths: ['src/**', 'src/configs/**', 'src/ml/data/**', 'src/tests/**']
   pull_request:
     branches: [main, master, develop]
   workflow_dispatch:  # 手動実行

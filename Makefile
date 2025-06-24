@@ -50,7 +50,7 @@ install:
 test:
 	@echo "🧪 テストを実行中..."
 	@if [ -d ".venv" ]; then \
-		.venv/bin/pytest tests/ -v --cov=src --cov-report=html; \
+		.venv/bin/pytest src/tests/ -v --cov=src --cov-report=html; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
 		exit 1; \
@@ -61,9 +61,9 @@ test:
 lint:
 	@echo "🔍 コード品質チェック中..."
 	@if [ -d ".venv" ]; then \
-		.venv/bin/flake8 src/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics; \
-		.venv/bin/flake8 src/ tests/ --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics; \
-		.venv/bin/mypy src/ tests/; \
+		.venv/bin/flake8 src/ src/tests/ --count --select=E9,F63,F7,F82 --show-source --statistics; \
+		.venv/bin/flake8 src/ src/tests/ --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics; \
+		.venv/bin/mypy src/ src/tests/; \
 		.venv/bin/bandit -r src/ --severity-level high; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
@@ -75,8 +75,8 @@ lint:
 format:
 	@echo "🎨 コードフォーマット中..."
 	@if [ -d ".venv" ]; then \
-		.venv/bin/black src/ tests/; \
-		.venv/bin/isort src/ tests/; \
+		.venv/bin/black src/ src/tests/; \
+		.venv/bin/isort src/ src/tests/; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
 		exit 1; \
@@ -157,8 +157,8 @@ check-model:
 # パイプライン状態確認
 status:
 	@echo "📋 パイプライン状態確認中..."
-	@echo "📁 必要なファイル:"
-	@ls -la configs/model_config.yaml 2>/dev/null || echo "❌ configs/model_config.yaml が見つかりません"
+	@echo "�� 必要なファイル:"
+	@ls -la src/configs/model_config.yaml 2>/dev/null || echo "❌ src/configs/model_config.yaml が見つかりません"
 	@ls -la src/ml/data/raw/house_data.csv 2>/dev/null || echo "❌ src/ml/data/raw/house_data.csv が見つかりません"
 	@ls -la src/ml/models/trained/house_price_prediction.pkl 2>/dev/null || echo "❌ 学習済みモデルが見つかりません"
 	@ls -la src/ml/models/trained/preprocessor.pkl 2>/dev/null || echo "❌ 前処理器が見つかりません"

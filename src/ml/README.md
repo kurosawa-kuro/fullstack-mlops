@@ -47,11 +47,11 @@ python src/ml/pipeline/train_pipeline.py
 
 - **Python バージョン**: 3.8+
 - **主要依存関係**: pandas, scikit-learn, xgboost, mlflow, joblib
-- **テスト**: `pytest tests/`
+- **テスト**: `pytest src/tests/`
 - **コード品質**: `flake8`, `mypy`, `black`
 
 ## 注意事項
 
 - 各モジュールは独立して実行可能です
 - パイプライン実行時は順序を守ってください（データ処理 → 特徴量エンジニアリング → モデル訓練）
-- モデルファイルは `models/trained/` ディレクトリに保存されます 
+- モデルファイルは `src/ml/models/trained/` ディレクトリに保存されます

@@ -4,7 +4,7 @@ services:
   # FastAPI backend service
   fastapi:
     build:
-      context: ./src/api
+      context: ./src/services/api
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
@@ -20,7 +20,7 @@ services:
   # Streamlit frontend service
   streamlit:
     build:
-      context: ./src/ui
+      context: ./src/services/ui
       dockerfile: Dockerfile
     ports:
       - "8501:8501"

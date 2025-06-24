@@ -3,7 +3,7 @@
 ## プロジェクト構成
 
 ```
-src/api/
+src/services/api/
 ├── app/
 │   ├── __init__.py
 │   ├── main.py              # FastAPIアプリケーション
