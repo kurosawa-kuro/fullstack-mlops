@@ -1,4 +1,4 @@
-# src/data/processor.py
+# src/ml/data/run_processing.py
 import argparse  # コマンドライン引数を解析するためのモジュール
 import logging  # ログ出力機能を提供するモジュール
 from pathlib import Path  # ファイルパス操作のためのモジュール

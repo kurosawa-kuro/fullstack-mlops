@@ -474,7 +474,7 @@ python -m jupyterlab
 生の住宅データセットをクリーニングと前処理：
 
 ```bash
-python src/data/run_processing.py \
+python src/ml/data/run_processing.py \
   --input data/raw/house_data.csv \
   --output data/processed/cleaned_house_data.csv
 ```
@@ -496,7 +496,7 @@ python src/data/run_processing.py \
 変換を適用し、特徴量を生成：
 
 ```bash
-python src/features/engineer.py \
+python src/ml/features/engineer.py \
   --input data/processed/cleaned_house_data.csv \
   --output data/processed/featured_house_data.csv \
   --preprocessor models/trained/preprocessor.pkl
@@ -523,7 +523,7 @@ python src/features/engineer.py \
 モデルを訓練し、すべてをMLflowにログ：
 
 ```bash
-python src/models/train_model.py \
+python src/ml/models/train_model.py \
   --config configs/model_config.yaml \
   --data data/processed/featured_house_data.csv \
   --models-dir models \

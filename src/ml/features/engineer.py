@@ -1,4 +1,4 @@
-# src/features/engineer.py
+# src/ml/features/engineer.py
 import argparse  # コマンドライン引数を解析するためのモジュール
 import logging  # ログ出力機能を提供するモジュール
 from datetime import datetime  # 日時操作のためのモジュール

@@ -32,9 +32,9 @@
 
 ### 3. モデル訓練 (train-model)
 ```yaml
-- データ処理 (src/data/run_processing.py)
-- 特徴量エンジニアリング (src/features/engineer.py)
-- モデル訓練 (src/models/train_model.py)
+- データ処理 (src/ml/data/run_processing.py)
+- 特徴量エンジニアリング (src/ml/features/engineer.py)
+- モデル訓練 (src/ml/models/train_model.py)
 - 成果物アップロード (GitHub Artifacts)
 ```
 
@@ -82,7 +82,7 @@ make test
 ```bash
 make train
 # または
-python src/train_pipeline.py
+python src/ml/pipeline/train_pipeline.py
 ```
 
 #### 6. 全パイプライン実行
@@ -158,7 +158,7 @@ model:
 ### 通常の開発フロー
 ```bash
 # 1. コード修正
-vim src/models/train_model.py
+vim src/ml/models/train_model.py
 
 # 2. コード品質チェック
 make lint
