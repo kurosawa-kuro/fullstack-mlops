@@ -1,0 +1,274 @@
+name: ML Model CI/CD
+
+on:
+  push:
+    branches: [main, master, develop]
+    paths:
+      - 'src/**'
+      - 'configs/**'
+      - 'data/**'
+      - 'tests/**'
+      - 'requirements.txt'
+      - '.github/workflows/ml-cicd.yml'
+  pull_request:
+    branches: [main, master, develop]
+    paths:
+      - 'src/**'
+      - 'configs/**'
+      - 'data/**'
+      - 'tests/**'
+      - 'requirements.txt'
+      - '.github/workflows/ml-cicd.yml'
+  workflow_dispatch:  # 手動実行可能
+
+jobs:
+  # コード品質チェック
+  code-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 black isort mypy bandit
+          pip install -r requirements.txt
+
+      - name: Code formatting check (Black)
+        run: |
+          black --check --diff src/ tests/ train_pipeline.py
+
+      - name: Import sorting check (isort)
+        run: |
+          isort --check-only --diff src/ tests/ train_pipeline.py
+
+      - name: Lint with flake8
+        run: |
+          flake8 src/ tests/ train_pipeline.py --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 src/ tests/ train_pipeline.py --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
+
+      - name: Type checking (mypy)
+        run: |
+          mypy src/ --ignore-missing-imports
+
+      - name: Security check (bandit)
+        run: |
+          bandit -r src/ -f json -o bandit-report.json || true
+          bandit -r src/ --severity-level high
+
+  # テスト実行（モデル訓練前の基本テスト）
+  test:
+    runs-on: ubuntu-latest
+    needs: code-quality
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov
+          pip install -r requirements.txt
+
+      - name: Run basic tests (without model files)
+        run: |
+          pytest tests/ -v --cov=src --cov-report=xml --cov-report=html -k "not test_model_files_exist and not test_model_can_load and not test_model_can_predict"
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+
+  # モデル訓練
+  train-model:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Create necessary directories
+        run: |
+          mkdir -p data/processed
+          mkdir -p models/trained
+
+      - name: Run ML pipeline
+        run: |
+          python train_pipeline.py
+
+      - name: Verify model artifacts
+        run: |
+          ls -la models/trained/
+          python -c "
+          import joblib
+          model = joblib.load('models/trained/house_price_prediction.pkl')
+          preprocessor = joblib.load('models/trained/preprocessor.pkl')
+          print('✅ モデルと前処理器の読み込み成功')
+          "
+
+      - name: Upload model artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: trained-models
+          path: |
+            models/trained/house_price_prediction.pkl
+            models/trained/preprocessor.pkl
+          retention-days: 30
+
+      - name: Upload processed data
+        uses: actions/upload-artifact@v4
+        with:
+          name: processed-data
+          path: data/processed/
+          retention-days: 30
+
+  # モデル性能テスト
+  model-performance:
+    runs-on: ubuntu-latest
+    needs: train-model
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Download model artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: trained-models
+          path: models/trained/
+
+      - name: Download processed data
+        uses: actions/download-artifact@v4
+        with:
+          name: processed-data
+          path: data/processed/
+
+      - name: Run model performance tests
+        run: |
+          python -m pytest tests/test_model_pipeline.py::TestModelPipeline::test_model_files_exist -v
+          python -m pytest tests/test_model_pipeline.py::TestModelPipeline::test_model_can_load -v
+          python -m pytest tests/test_model_pipeline.py::TestModelPipeline::test_model_can_predict -v
+
+      - name: Model performance summary
+        run: |
+          echo "🎯 モデル性能テスト完了"
+          echo "📊 モデルファイルサイズ: $(ls -lh models/trained/house_price_prediction.pkl | awk '{print $5}')"
+          echo "📊 前処理器ファイルサイズ: $(ls -lh models/trained/preprocessor.pkl | awk '{print $5}')"
+
+  # GitHub Release作成（タグプッシュ時）
+  create-release:
+    runs-on: ubuntu-latest
+    needs: [train-model, model-performance]
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download model artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: trained-models
+          path: models/trained/
+
+      - name: Download processed data
+        uses: actions/download-artifact@v4
+        with:
+          name: processed-data
+          path: data/processed/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            models/trained/house_price_prediction.pkl
+            models/trained/preprocessor.pkl
+            data/processed/featured_house_data.csv
+          body: |
+            ## 🏠 House Price Prediction Model Release
+            
+            ### 📦 含まれるファイル
+            - `house_price_prediction.pkl`: 学習済みモデル
+            - `preprocessor.pkl`: 前処理器
+            - `featured_house_data.csv`: 処理済みデータ
+            
+            ### 🚀 使用方法
+            ```python
+            import joblib
+            
+            # モデルと前処理器を読み込み
+            model = joblib.load('house_price_prediction.pkl')
+            preprocessor = joblib.load('preprocessor.pkl')
+            
+            # 予測実行
+            # (サンプルデータで前処理 → 予測)
+            ```
+            
+            ### 📊 モデル情報
+            - アルゴリズム: Random Forest
+            - 特徴量: sqft, bedrooms, bathrooms, year_built, location, condition
+            - ターゲット: house price
+            
+            ### 🔄 CI/CD
+            このリリースは自動CI/CDパイプラインにより生成されました。
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 

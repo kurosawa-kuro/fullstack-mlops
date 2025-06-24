@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  # FastAPI backend service
+  fastapi:
+    build:
+      context: ./src/api
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - MODEL_PATH=/app/models/trained/house_price_prediction.pkl
+      - PREPROCESSOR_PATH=/app/models/trained/preprocessor.pkl
+    volumes:
+      - ./models/trained:/app/models/trained
+    networks:
+      - mlops-network
+    restart: unless-stopped
+
+  # Streamlit frontend service
+  streamlit:
+    build:
+      context: ./src/ui
+      dockerfile: Dockerfile
+    ports:
+      - "8501:8501"
+    environment:
+      - API_URL=http://fastapi:8000
+      - APP_VERSION=1.0.0
+    depends_on:
+      - fastapi
+    networks:
+      - mlops-network
+    restart: unless-stopped
+
+networks:
+  mlops-network:
+    driver: bridge 
