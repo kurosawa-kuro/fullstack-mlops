@@ -9,6 +9,43 @@
 
 ---
 
+## 🚀 クイックスタート
+
+### 基本的な使用方法
+
+```bash
+# 1. 環境セットアップ
+make venv
+make install
+
+# 2. モデル訓練（既存モデルがあればスキップ）
+make train
+
+# 3. テスト実行
+make test
+
+# 4. 全パイプライン実行
+make pipeline
+```
+
+### 効率的な開発コマンド
+
+```bash
+# 既存モデルがあればスキップしてクイック実行
+make pipeline-quick
+
+# 強制再訓練（モデルを更新したい場合）
+make train-force
+
+# モデル性能確認
+make check-model
+
+# プロジェクト状態確認
+make status
+```
+
+---
+
 ## 📦 プロジェクト構成
 
 ```
@@ -20,9 +57,13 @@ house-price-predictor/
 ├── models/                 # 訓練済みモデルと前処理器
 ├── notebooks/              # 実験用Jupyterノートブック（オプション）
 ├── src/
-│   ├── data/               # データクリーニングと前処理スクリプト
-│   ├── features/           # 特徴量エンジニアリングパイプライン
-│   ├── models/             # モデル訓練と評価
+│   ├── api/                # FastAPIアプリケーション
+│   ├── ui/                 # Streamlitフロントエンド
+│   └── ml/                 # 機械学習関連
+│       ├── data/           # データクリーニングと前処理スクリプト
+│       ├── features/       # 特徴量エンジニアリングパイプライン
+│       ├── models/         # モデル訓練と評価
+│       └── pipeline/       # エンドツーエンドパイプライン
 ├── requirements.txt        # Python依存関係
 └── README.md               # このファイル
 ```

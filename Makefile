@@ -1,24 +1,26 @@
 # ML Model CI/CD Makefile
 # 開発者体験向上のための便利コマンド集
 
-.PHONY: help install test lint format clean train pipeline release setup-dev check-model status venv
+.PHONY: help install test lint format clean train train-force pipeline pipeline-quick release setup-dev check-model status venv
 
 # デフォルトターゲット
 help:
 	@echo "🏠 House Price Prediction ML Pipeline"
 	@echo ""
 	@echo "利用可能なコマンド:"
-	@echo "  venv       - 仮想環境を作成・アクティベート"
-	@echo "  install    - 依存関係をインストール"
-	@echo "  test       - テストを実行"
-	@echo "  lint       - コード品質チェック"
-	@echo "  format     - コードフォーマット"
-	@echo "  clean      - 一時ファイルを削除"
-	@echo "  train      - モデルを訓練"
-	@echo "  pipeline   - 全パイプラインを実行"
-	@echo "  release    - リリース用タグを作成"
-	@echo "  check-model - モデル性能確認"
-	@echo "  status     - パイプライン状態確認"
+	@echo "  venv           - 仮想環境を作成・アクティベート"
+	@echo "  install        - 依存関係をインストール"
+	@echo "  test           - テストを実行"
+	@echo "  lint           - コード品質チェック"
+	@echo "  format         - コードフォーマット"
+	@echo "  clean          - 一時ファイルを削除"
+	@echo "  train          - モデルを訓練（既存モデルがあればスキップ）"
+	@echo "  train-force    - モデルを強制再訓練"
+	@echo "  pipeline       - 全パイプラインを実行"
+	@echo "  pipeline-quick - 既存モデルがあればスキップしてパイプライン実行"
+	@echo "  release        - リリース用タグを作成"
+	@echo "  check-model    - モデル性能確認"
+	@echo "  status         - パイプライン状態確認"
 	@echo ""
 
 # 仮想環境セットアップ
@@ -92,9 +94,9 @@ clean:
 	rm -rf .coverage
 	@echo "✅ クリーンアップ完了"
 
-# モデル訓練
+# モデル訓練（既存モデルがあればスキップ）
 train:
-	@echo "🔧 モデル訓練中..."
+	@echo "🔧 モデル訓練中（既存モデルがあればスキップ）..."
 	@if [ -d ".venv" ]; then \
 		.venv/bin/python src/ml/pipeline/train_pipeline.py; \
 	else \
@@ -103,9 +105,24 @@ train:
 	fi
 	@echo "✅ モデル訓練完了"
 
+# モデル強制再訓練
+train-force:
+	@echo "🔧 モデル強制再訓練中..."
+	@if [ -d ".venv" ]; then \
+		.venv/bin/python src/ml/pipeline/train_pipeline.py --force-retrain; \
+	else \
+		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
+		exit 1; \
+	fi
+	@echo "✅ モデル強制再訓練完了"
+
 # 全パイプライン実行
 pipeline: clean install lint test train
 	@echo "🚀 全パイプライン実行完了"
+
+# クイックパイプライン実行（既存モデルがあればスキップ）
+pipeline-quick: clean install lint test train
+	@echo "⚡ クイックパイプライン実行完了"
 
 # リリース用タグ作成
 release:
