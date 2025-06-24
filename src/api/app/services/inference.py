@@ -83,4 +83,4 @@ def batch_predict(requests: list[HousePredictionRequest]) -> list[float]:
 
     # Make predictions
     predictions = model.predict(processed_features)
-    return predictions.tolist() 
+    return predictions.tolist()

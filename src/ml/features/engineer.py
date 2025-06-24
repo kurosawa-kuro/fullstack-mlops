@@ -35,7 +35,9 @@ def create_features(df):
     logger.info("Created 'price_per_sqft' feature")  # 坪単価特徴量作成のログ
 
     # Bedroom to bathroom ratio
-    df_featured["bed_bath_ratio"] = df_featured["bedrooms"] / df_featured["bathrooms"]  # 寝室とバスルームの比率を計算
+    df_featured["bed_bath_ratio"] = (
+        df_featured["bedrooms"] / df_featured["bathrooms"]
+    )  # 寝室とバスルームの比率を計算
     # Handle division by zero
     df_featured["bed_bath_ratio"] = df_featured["bed_bath_ratio"].replace(
         [np.inf, -np.inf], np.nan
@@ -91,7 +93,9 @@ def run_feature_engineering(input_file, output_file, preprocessor_file):
 
     # Create features
     df_featured = create_features(df)  # 特徴量を作成
-    logger.info(f"Created featured dataset with shape: {df_featured.shape}")  # 特徴量作成完了のログ
+    logger.info(
+        f"Created featured dataset with shape: {df_featured.shape}"
+    )  # 特徴量作成完了のログ
 
     # Create and fit the preprocessor
     preprocessor = create_preprocessor()  # 前処理器を作成
@@ -120,7 +124,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Feature engineering for housing data."
     )  # 引数パーサーを作成
-    parser.add_argument("--input", required=True, help="Path to cleaned CSV file")  # 入力ファイルパスの引数を定義
+    parser.add_argument(
+        "--input", required=True, help="Path to cleaned CSV file"
+    )  # 入力ファイルパスの引数を定義
     parser.add_argument(
         "--output", required=True, help="Path for output CSV file (engineered features)"
     )  # 出力ファイルパスの引数を定義
@@ -130,4 +136,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()  # コマンドライン引数を解析
 
-    run_feature_engineering(args.input, args.output, args.preprocessor)  # 特徴量エンジニアリングを実行
+    run_feature_engineering(
+        args.input, args.output, args.preprocessor
+    )  # 特徴量エンジニアリングを実行

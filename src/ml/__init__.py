@@ -9,4 +9,4 @@ This package contains all machine learning related modules including:
 """
 
 __version__ = "1.0.0"
-__author__ = "MLOps Team" 
+__author__ = "MLOps Team"

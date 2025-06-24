@@ -77,4 +77,4 @@ async def batch_predict_endpoint(requests: list[HousePredictionRequest]):
     Returns:
         list: List of predicted house prices
     """
-    return batch_predict(requests) 
+    return batch_predict(requests)

@@ -48,4 +48,4 @@ class PredictionResponse(BaseModel):
     predicted_price: float
     confidence_interval: List[float]
     features_importance: dict
-    prediction_time: str 
+    prediction_time: str

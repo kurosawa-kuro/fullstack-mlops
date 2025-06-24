@@ -35,7 +35,9 @@ def clean_data(df):
             # For numeric columns, fill with median
             if pd.api.types.is_numeric_dtype(df_cleaned[column]):  # 数値型の列の場合
                 median_value = df_cleaned[column].median()  # 中央値を計算
-                df_cleaned[column] = df_cleaned[column].fillna(median_value)  # 欠損値を中央値で補完
+                df_cleaned[column] = df_cleaned[column].fillna(
+                    median_value
+                )  # 欠損値を中央値で補完
                 logger.info(
                     f"Filled missing values in {column} with median: {median_value}"
                 )  # 中央値補完のログ
@@ -65,7 +67,9 @@ def clean_data(df):
         df_cleaned = df_cleaned[
             (df_cleaned["price"] >= lower_bound) & (df_cleaned["price"] <= upper_bound)
         ]  # 外れ値を除外
-        logger.info(f"Removed outliers. New dataset shape: {df_cleaned.shape}")  # 外れ値除去後のログ
+        logger.info(
+            f"Removed outliers. New dataset shape: {df_cleaned.shape}"
+        )  # 外れ値除去後のログ
 
     return df_cleaned  # クリーニング済みデータフレームを返す
 
@@ -91,9 +95,15 @@ def process_data(input_file, output_file):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Data processing for housing data.")  # 引数パーサーを作成
-    parser.add_argument("--input", required=True, help="Path to input CSV file")  # 入力ファイルパスの引数を定義
-    parser.add_argument("--output", required=True, help="Path for output CSV file")  # 出力ファイルパスの引数を定義
+    parser = argparse.ArgumentParser(
+        description="Data processing for housing data."
+    )  # 引数パーサーを作成
+    parser.add_argument(
+        "--input", required=True, help="Path to input CSV file"
+    )  # 入力ファイルパスの引数を定義
+    parser.add_argument(
+        "--output", required=True, help="Path for output CSV file"
+    )  # 出力ファイルパスの引数を定義
 
     args = parser.parse_args()  # コマンドライン引数を解析
 

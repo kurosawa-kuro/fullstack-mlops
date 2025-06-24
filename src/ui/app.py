@@ -1,9 +1,10 @@
-import streamlit as st
-import requests
 import json
-import time
 import os
 import socket  # For hostname and IP address
+import time
+
+import requests
+import streamlit as st
 
 # Set the page configuration (must be the first Streamlit command)
 st.set_page_config(

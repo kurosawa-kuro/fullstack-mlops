@@ -54,10 +54,10 @@ def check_model_exists(models_dir):
     """モデルファイルが既に存在するかチェック"""
     model_path = f"{models_dir}/trained/house_price_prediction.pkl"
     preprocessor_path = f"{models_dir}/trained/preprocessor.pkl"
-    
+
     model_exists = os.path.exists(model_path)
     preprocessor_exists = os.path.exists(preprocessor_path)
-    
+
     if model_exists and preprocessor_exists:
         logger.info(f"✅ モデルファイルが既に存在します: {model_path}")
         logger.info(f"✅ 前処理器ファイルが既に存在します: {preprocessor_path}")
@@ -76,12 +76,8 @@ def main():
     parser.add_argument(
         "--skip-feature-engineering", action="store_true", help="特徴量エンジニアリングをスキップ"
     )
-    parser.add_argument(
-        "--skip-model-training", action="store_true", help="モデル訓練をスキップ"
-    )
-    parser.add_argument(
-        "--force-retrain", action="store_true", help="既存モデルがあっても強制再訓練"
-    )
+    parser.add_argument("--skip-model-training", action="store_true", help="モデル訓練をスキップ")
+    parser.add_argument("--force-retrain", action="store_true", help="既存モデルがあっても強制再訓練")
 
     args = parser.parse_args()
 
