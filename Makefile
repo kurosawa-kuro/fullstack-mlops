@@ -1,7 +1,7 @@
 # ML Model CI/CD Makefile
 # 開発者体験向上のための便利コマンド集
 
-.PHONY: help install test lint format clean train train-force pipeline pipeline-quick release setup-dev check-model status venv dwh dwh-explore dwh-backup dwh-stats dwh-cli dwh-tables dwh-summary dwh-location dwh-condition dwh-price-range dwh-year-built dwh-unlock
+.PHONY: help install test lint format clean train train-force pipeline pipeline-quick release setup-dev check-model status venv dwh dwh-explore dwh-backup dwh-stats dwh-cli dwh-tables dwh-summary dwh-location dwh-condition dwh-price-range dwh-year-built dwh-unlock train-ensemble train-ensemble-voting train-ensemble-stacking check-ensemble
 
 # デフォルトターゲット
 help:
@@ -16,10 +16,14 @@ help:
 	@echo "  clean          - 一時ファイルを削除"
 	@echo "  train          - モデルを訓練（既存モデルがあればスキップ）"
 	@echo "  train-force    - モデルを強制再訓練"
+	@echo "  train-ensemble - アンサンブルモデルを訓練"
+	@echo "  train-ensemble-voting - Voting Ensembleを訓練"
+	@echo "  train-ensemble-stacking - Stacking Ensembleを訓練"
 	@echo "  pipeline       - 全パイプラインを実行"
 	@echo "  pipeline-quick - 既存モデルがあればスキップしてパイプライン実行"
 	@echo "  release        - リリース用タグを作成"
 	@echo "  check-model    - モデル性能確認"
+	@echo "  check-ensemble - アンサンブルモデル性能確認"
 	@echo "  status         - パイプライン状態確認"
 	@echo ""
 	@echo "🗄️ DuckDB DWH関連:"
@@ -397,4 +401,71 @@ dwh-unlock:
 	@-pkill -f python.*duckdb 2>/dev/null || true
 	@echo "✅ Pythonプロセス終了処理完了"
 	@echo "✅ DWHロック解除完了"
-	@echo "📝 再度 'make dwh-tables' などを実行してください" 
+	@echo "📝 再度 'make dwh-tables' などを実行してください"
+
+# アンサンブルモデル訓練（デフォルト設定）
+train-ensemble:
+	@echo "🔧 アンサンブルモデル訓練中..."
+	@if [ -d ".venv" ]; then \
+		.venv/bin/python src/ml/models/train_ensemble.py \
+			--config src/configs/ensemble_config.yaml \
+			--duckdb-path src/ml/data/dwh/house_price_dwh.duckdb \
+			--models-dir src/ml/models \
+			--view-name v_house_analytics; \
+	else \
+		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
+		exit 1; \
+	fi
+	@echo "✅ アンサンブルモデル訓練完了"
+
+# Voting Ensemble訓練
+train-ensemble-voting:
+	@echo "🔧 Voting Ensemble訓練中..."
+	@if [ -d ".venv" ]; then \
+		.venv/bin/python src/ml/models/train_ensemble.py \
+			--config src/configs/ensemble_config.yaml \
+			--duckdb-path src/ml/data/dwh/house_price_dwh.duckdb \
+			--models-dir src/ml/models \
+			--view-name v_house_analytics; \
+	else \
+		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
+		exit 1; \
+	fi
+	@echo "✅ Voting Ensemble訓練完了"
+
+# Stacking Ensemble訓練
+train-ensemble-stacking:
+	@echo "🔧 Stacking Ensemble訓練中..."
+	@if [ -d ".venv" ]; then \
+		.venv/bin/python src/ml/models/train_ensemble.py \
+			--config src/configs/ensemble_config.yaml \
+			--duckdb-path src/ml/data/dwh/house_price_dwh.duckdb \
+			--models-dir src/ml/models \
+			--view-name v_house_analytics; \
+	else \
+		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
+		exit 1; \
+	fi
+	@echo "✅ Stacking Ensemble訓練完了"
+
+# アンサンブルモデル性能確認
+check-ensemble:
+	@echo "📊 アンサンブルモデル性能確認中..."
+	@if [ -d ".venv" ]; then \
+		.venv/bin/python -c "import joblib; import pandas as pd; import numpy as np; \
+		model = joblib.load('src/ml/models/trained/house_price_ensemble_duckdb.pkl'); \
+		preprocessor = joblib.load('src/ml/models/trained/house_price_ensemble_duckdb_preprocessor.pkl'); \
+		print('✅ アンサンブルモデル読み込み成功'); \
+		sample_data = pd.DataFrame({ \
+			'sqft': [2000], 'bedrooms': [3], 'bathrooms': [2.5], \
+			'house_age': [25], 'price_per_sqft': [200], 'bed_bath_ratio': [1.2], \
+			'location': ['Suburb'], 'condition': ['Good'] \
+		}); \
+		X_transformed = preprocessor.transform(sample_data); \
+		prediction = model.predict(X_transformed); \
+		print(f'📈 アンサンブル予測結果: {prediction[0]:,.2f}')"; \
+	else \
+		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
+		exit 1; \
+	fi
+	@echo "✅ アンサンブルモデル性能確認完了" 
