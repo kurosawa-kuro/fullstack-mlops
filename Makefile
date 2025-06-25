@@ -5,7 +5,7 @@
 
 # デフォルトターゲット
 help:
-	@echo "🏠 House Price Prediction ML Pipeline"
+	@echo "🏠 House Price Prediction ML Pipeline (DuckDB版)"
 	@echo ""
 	@echo "利用可能なコマンド:"
 	@echo "  venv           - 仮想環境を作成・アクティベート"
@@ -14,15 +14,15 @@ help:
 	@echo "  lint           - コード品質チェック"
 	@echo "  format         - コードフォーマット"
 	@echo "  clean          - 一時ファイルを削除"
-	@echo "  train          - モデルを訓練（既存モデルがあればスキップ）"
-	@echo "  train-force    - モデルを強制再訓練"
+	@echo "  train          - DuckDBモデルを訓練（既存モデルがあればスキップ）"
+	@echo "  train-force    - DuckDBモデルを強制再訓練"
 	@echo "  train-ensemble - アンサンブルモデルを訓練"
 	@echo "  train-ensemble-voting - Voting Ensembleを訓練"
 	@echo "  train-ensemble-stacking - Stacking Ensembleを訓練"
 	@echo "  pipeline       - 全パイプラインを実行"
 	@echo "  pipeline-quick - 既存モデルがあればスキップしてパイプライン実行"
 	@echo "  release        - リリース用タグを作成"
-	@echo "  check-model    - モデル性能確認"
+	@echo "  check-model    - DuckDBモデル性能確認"
 	@echo "  check-ensemble - アンサンブルモデル性能確認"
 	@echo "  status         - パイプライン状態確認"
 	@echo ""
@@ -113,31 +113,9 @@ clean:
 	rm -rf .coverage
 	@echo "✅ クリーンアップ完了"
 
-# モデル訓練（既存モデルがあればスキップ）
+# DuckDBモデル訓練（既存モデルがあればスキップ）
 train:
-	@echo "🔧 モデル訓練中（既存モデルがあればスキップ）..."
-	@if [ -d ".venv" ]; then \
-		.venv/bin/python src/ml/pipeline/train_pipeline.py --data-dir src/ml/data --models-dir src/ml/models; \
-	else \
-		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
-		exit 1; \
-	fi
-	@echo "✅ モデル訓練完了"
-
-# モデル強制再訓練
-train-force:
-	@echo "🔧 モデル強制再訓練中..."
-	@if [ -d ".venv" ]; then \
-		.venv/bin/python src/ml/pipeline/train_pipeline.py --force-retrain --data-dir src/ml/data --models-dir src/ml/models; \
-	else \
-		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
-		exit 1; \
-	fi
-	@echo "✅ モデル強制再訓練完了"
-
-# DuckDBを使用したモデル訓練
-train-duckdb:
-	@echo "🔧 DuckDBを使用したモデル訓練中..."
+	@echo "🔧 DuckDBモデル訓練中（既存モデルがあればスキップ）..."
 	@if [ -d ".venv" ]; then \
 		.venv/bin/python src/ml/models/train_model.py \
 			--config src/configs/model_config.yaml \
@@ -150,15 +128,16 @@ train-duckdb:
 	fi
 	@echo "✅ DuckDBモデル訓練完了"
 
-# DuckDBを使用したモデル強制再訓練
-train-duckdb-force:
-	@echo "🔧 DuckDBを使用したモデル強制再訓練中..."
+# DuckDBモデル強制再訓練
+train-force:
+	@echo "🔧 DuckDBモデル強制再訓練中..."
 	@if [ -d ".venv" ]; then \
 		.venv/bin/python src/ml/models/train_model.py \
 			--config src/configs/model_config.yaml \
 			--duckdb-path src/ml/data/dwh/house_price_dwh.duckdb \
 			--models-dir src/ml/models \
-			--view-name v_house_analytics; \
+			--view-name v_house_analytics \
+			--force-retrain; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
 		exit 1; \
@@ -192,19 +171,8 @@ setup-dev: install
 	fi
 	@echo "✅ 開発環境セットアップ完了"
 
-# モデル性能確認
-check-model:
-	@echo "📊 モデル性能確認中..."
-	@if [ -d ".venv" ]; then \
-		.venv/bin/python -c "import joblib; import pandas as pd; model = joblib.load('src/ml/models/trained/house_price_prediction.pkl'); preprocessor = joblib.load('src/ml/models/trained/preprocessor.pkl'); print('✅ モデル読み込み成功'); sample_data = pd.DataFrame({'sqft': [1500], 'bedrooms': [3], 'bathrooms': [2], 'year_built': [2010], 'location': ['Suburban'], 'condition': ['Good']}); X_transformed = preprocessor.transform(sample_data); prediction = model.predict(X_transformed); print(f'📈 サンプル予測結果: $${prediction[0]:,.2f}')"; \
-	else \
-		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
-		exit 1; \
-	fi
-	@echo "✅ モデル性能確認完了"
-
 # DuckDBモデル性能確認
-check-model-duckdb:
+check-model:
 	@echo "📊 DuckDBモデル性能確認中..."
 	@if [ -d ".venv" ]; then \
 		.venv/bin/python -c "import joblib; import pandas as pd; import numpy as np; \
@@ -238,8 +206,8 @@ status:
 	@echo "📁 必要なファイル:"
 	@ls -la src/configs/model_config.yaml 2>/dev/null || echo "❌ src/configs/model_config.yaml が見つかりません"
 	@ls -la src/ml/data/raw/house_data.csv 2>/dev/null || echo "❌ src/ml/data/raw/house_data.csv が見つかりません"
-	@ls -la src/ml/models/trained/house_price_prediction.pkl 2>/dev/null || echo "❌ 学習済みモデルが見つかりません"
-	@ls -la src/ml/models/trained/preprocessor.pkl 2>/dev/null || echo "❌ 前処理器が見つかりません"
+	@ls -la src/ml/models/trained/house_price_predictor_duckdb.pkl 2>/dev/null || echo "❌ DuckDB学習済みモデルが見つかりません"
+	@ls -la src/ml/models/trained/house_price_predictor_duckdb_encoders.pkl 2>/dev/null || echo "❌ DuckDB前処理器が見つかりません"
 	@echo ""
 	@echo "🗄️ DWH状態:"
 	@ls -la src/ml/data/dwh/house_price_dwh.duckdb 2>/dev/null || echo "❌ DWHデータベースが見つかりません"
