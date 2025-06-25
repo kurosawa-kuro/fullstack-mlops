@@ -6,8 +6,8 @@ sources:
     database: house_price_dwh
     schema: main
     tables:
-      - name: raw_house_data
-        description: "Raw house data ingested from CSV"
+      - name: bronze_raw_house_data
+        description: "Raw house data ingested from CSV (Bronze Layer)"
         columns:
           - name: id
             description: "Primary key"

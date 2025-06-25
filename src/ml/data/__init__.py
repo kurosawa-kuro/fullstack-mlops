@@ -4,6 +4,6 @@ Data Processing Package
 Handles data loading, cleaning, and preprocessing operations.
 """
 
-from .run_processing import *
+from . import dwh
 
-__all__ = ["run_processing"]
+__all__ = ["dwh"]

@@ -3,19 +3,14 @@ DWH Core Modules
 
 This package contains the core data warehouse functionality:
 - Database management
-- Schema operations
-- Data ingestion and transformation
+- Bronze layer data ingestion
 """
 
 from .database import DWHManager
-from .schema import create_schema, drop_schema, get_schema_info
-from .ingestion import ingest_house_data, validate_ingestion
+from .ingestion import ingest_bronze_data, validate_bronze_ingestion
 
 __all__ = [
     "DWHManager",
-    "create_schema",
-    "drop_schema",
-    "get_schema_info",
-    "ingest_house_data",
-    "validate_ingestion",
+    "ingest_bronze_data",
+    "validate_bronze_ingestion",
 ] 

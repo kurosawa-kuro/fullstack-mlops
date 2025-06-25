@@ -16,6 +16,5 @@ SELECT
     location,
     year_built,
     condition,
-    created_at,
-    updated_at
-FROM {{ source('raw', 'raw_house_data') }} 
+    created_at
+FROM {{ source('raw', 'bronze_raw_house_data') }} 
