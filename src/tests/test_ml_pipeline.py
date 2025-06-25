@@ -107,11 +107,11 @@ class TestModelPipeline:
     def test_duckdb_dwh_exists(self):
         """DuckDB DWHファイルが存在することを確認"""
         dwh_path = "src/ml/data/dwh/house_price_dwh.duckdb"
-        
+
         # DWHファイルが存在しない場合はスキップ
         if not os.path.exists(dwh_path):
             pytest.skip(f"DuckDB DWHが存在しません: {dwh_path}")
-            
+
         assert os.path.exists(dwh_path), f"DuckDB DWHが見つかりません: {dwh_path}"
 
     def test_duckdb_dwh_accessible(self):
@@ -172,7 +172,9 @@ class TestModelPipeline:
                         "price_per_sqft": sample["price"] / sample["sqft"],
                         "bed_bath_ratio": sample["bedrooms"] / sample["bathrooms"],
                         "location": sample["location_name"],  # location_name → location
-                        "condition": sample["condition_name"],  # condition_name → condition
+                        "condition": sample[
+                            "condition_name"
+                        ],  # condition_name → condition
                     }
                 )
 
