@@ -131,6 +131,36 @@ train-force:
 	fi
 	@echo "✅ モデル強制再訓練完了"
 
+# DuckDBを使用したモデル訓練
+train-duckdb:
+	@echo "🔧 DuckDBを使用したモデル訓練中..."
+	@if [ -d ".venv" ]; then \
+		.venv/bin/python src/ml/models/train_model.py \
+			--config src/configs/model_config.yaml \
+			--duckdb-path src/ml/data/dwh/house_price_dwh.duckdb \
+			--models-dir src/ml/models \
+			--view-name v_house_analytics; \
+	else \
+		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
+		exit 1; \
+	fi
+	@echo "✅ DuckDBモデル訓練完了"
+
+# DuckDBを使用したモデル強制再訓練
+train-duckdb-force:
+	@echo "🔧 DuckDBを使用したモデル強制再訓練中..."
+	@if [ -d ".venv" ]; then \
+		.venv/bin/python src/ml/models/train_model.py \
+			--config src/configs/model_config.yaml \
+			--duckdb-path src/ml/data/dwh/house_price_dwh.duckdb \
+			--models-dir src/ml/models \
+			--view-name v_house_analytics; \
+	else \
+		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
+		exit 1; \
+	fi
+	@echo "✅ DuckDBモデル強制再訓練完了"
+
 # 全パイプライン実行
 pipeline: clean install lint test train
 	@echo "🚀 全パイプライン実行完了"
@@ -168,6 +198,34 @@ check-model:
 		exit 1; \
 	fi
 	@echo "✅ モデル性能確認完了"
+
+# DuckDBモデル性能確認
+check-model-duckdb:
+	@echo "📊 DuckDBモデル性能確認中..."
+	@if [ -d ".venv" ]; then \
+		.venv/bin/python -c "import joblib; import pandas as pd; import numpy as np; \
+		model = joblib.load('src/ml/models/trained/house_price_predictor_duckdb.pkl'); \
+		preprocessor = joblib.load('src/ml/models/trained/house_price_predictor_duckdb_encoders.pkl'); \
+		print('✅ DuckDBモデル読み込み成功'); \
+		sample_data = pd.DataFrame({ \
+			'sqft': [2000], 'bedrooms': [3], 'bathrooms': [2.5], \
+			'house_age': [25], 'bed_bath_ratio': [1.2], \
+			'condition_score': [3], 'year_value': [1998], \
+			'location_name': ['Suburb'], 'location_type': ['Residential'], \
+			'condition_name': ['Good'], 'decade': ['1990s'], 'century': ['20th'] \
+		}); \
+		sample_data['log_sqft'] = np.log(sample_data['sqft']); \
+		sample_data['house_age_squared'] = sample_data['house_age'] ** 2; \
+		sample_data['total_rooms'] = sample_data['bedrooms'] + sample_data['bathrooms']; \
+		sample_data['sqft_per_bedroom'] = sample_data['sqft'] / (sample_data['bedrooms'] + 1); \
+		X_transformed = preprocessor.transform(sample_data); \
+		prediction = model.predict(X_transformed); \
+		print(f'📈 サンプル予測結果: $${prediction[0]:,.2f}')"; \
+	else \
+		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
+		exit 1; \
+	fi
+	@echo "✅ DuckDBモデル性能確認完了"
 
 # パイプライン状態確認
 status:
