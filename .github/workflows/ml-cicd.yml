@@ -236,8 +236,8 @@ jobs:
               'house_age': sample['house_age'],
               'price_per_sqft': sample['price'] / sample['sqft'],
               'bed_bath_ratio': sample['bedrooms'] / sample['bathrooms'],
-              'location_name': sample['location_name'],
-              'condition_name': sample['condition_name']
+              'location': sample['location_name'],
+              'condition': sample['condition_name']
           })
           
           X_transformed = preprocessor.transform(X)
