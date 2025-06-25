@@ -25,7 +25,6 @@ jobs:
   # コード品質チェック
   code-quality:
     runs-on: ubuntu-latest
-    if: false
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
