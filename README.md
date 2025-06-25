@@ -294,3 +294,26 @@ MIT License
 - MLflow開発チーム
 - FastAPI開発チーム
 - Streamlit開発チーム
+
+### 📦 含まれるファイル
+- `house_price_prediction.pkl`: 学習済みモデル
+- `house_price_prediction_encoders.pkl`: 前処理器
+- `house_price_dwh.duckdb`: DuckDBデータウェアハウス
+
+### 🚀 使用方法
+```python
+import joblib
+import duckdb
+
+# モデルと前処理器を読み込み
+model = joblib.load('house_price_prediction.pkl')
+preprocessor = joblib.load('house_price_prediction_encoders.pkl')
+
+# DuckDBからデータを読み込み
+conn = duckdb.connect('house_price_dwh.duckdb')
+data = conn.execute('SELECT * FROM v_house_analytics').fetchdf()
+conn.close()
+
+# 予測実行
+# (DuckDBデータで前処理 → 予測)
+```

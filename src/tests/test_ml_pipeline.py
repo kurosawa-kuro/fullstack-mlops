@@ -13,12 +13,12 @@ class TestModelPipeline:
     def test_model_files_exist(self):
         """学習済みモデルファイルが存在することを確認"""
         model_path = "src/ml/models/trained/house_price_prediction.pkl"
-        preprocessor_path = "src/ml/models/trained/preprocessor.pkl"
+        preprocessor_path = "src/ml/models/trained/house_price_prediction_encoders.pkl"
 
         # モデルファイルが存在しない場合はスキップ
         if not os.path.exists(model_path):
             pytest.skip(f"モデルファイルが存在しません: {model_path}")
-
+        
         if not os.path.exists(preprocessor_path):
             pytest.skip(f"前処理ファイルが存在しません: {preprocessor_path}")
 
@@ -30,7 +30,7 @@ class TestModelPipeline:
     def test_model_can_load(self):
         """モデルが正常に読み込めることを確認"""
         model_path = "src/ml/models/trained/house_price_prediction.pkl"
-        preprocessor_path = "src/ml/models/trained/preprocessor.pkl"
+        preprocessor_path = "src/ml/models/trained/house_price_prediction_encoders.pkl"
 
         # モデルファイルが存在しない場合はスキップ
         if not os.path.exists(model_path):
@@ -47,7 +47,7 @@ class TestModelPipeline:
     def test_model_can_predict(self):
         """モデルが予測を実行できることを確認"""
         model_path = "src/ml/models/trained/house_price_prediction.pkl"
-        preprocessor_path = "src/ml/models/trained/preprocessor.pkl"
+        preprocessor_path = "src/ml/models/trained/house_price_prediction_encoders.pkl"
 
         # モデルファイルが存在しない場合はスキップ
         if not os.path.exists(model_path):
@@ -142,7 +142,7 @@ class TestModelPipeline:
         """DuckDBとモデルの統合テスト"""
         dwh_path = "src/ml/data/dwh/house_price_dwh.duckdb"
         model_path = "src/ml/models/trained/house_price_prediction.pkl"
-        preprocessor_path = "src/ml/models/trained/preprocessor.pkl"
+        preprocessor_path = "src/ml/models/trained/house_price_prediction_encoders.pkl"
 
         # 必要なファイルが存在しない場合はスキップ
         if not os.path.exists(dwh_path):

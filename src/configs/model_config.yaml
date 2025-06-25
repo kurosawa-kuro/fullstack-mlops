@@ -1,6 +1,6 @@
 # Model configuration for house price prediction using DuckDB
 model:
-  name: "house_price_predictor_duckdb"
+  name: "house_price_prediction"
   best_model: "RandomForest"
   target_variable: "price"
   parameters:

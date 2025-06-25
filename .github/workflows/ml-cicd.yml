@@ -146,7 +146,7 @@ jobs:
           python -c "
           import joblib
           model = joblib.load('src/ml/models/trained/house_price_prediction.pkl')
-          preprocessor = joblib.load('src/ml/models/trained/preprocessor.pkl')
+          preprocessor = joblib.load('src/ml/models/trained/house_price_prediction_encoders.pkl')
           print('✅ モデルと前処理器の読み込み成功')
           "
 
@@ -156,7 +156,7 @@ jobs:
           name: trained-models-${{ github.ref_name }}
           path: |
             src/ml/models/trained/house_price_prediction.pkl
-            src/ml/models/trained/preprocessor.pkl
+            src/ml/models/trained/house_price_prediction_encoders.pkl
           retention-days: 30
 
       - name: Upload DuckDB database
@@ -266,7 +266,7 @@ jobs:
           
           # モデルで予測
           model = joblib.load('src/ml/models/trained/house_price_prediction.pkl')
-          preprocessor = joblib.load('src/ml/models/trained/preprocessor.pkl')
+          preprocessor = joblib.load('src/ml/models/trained/house_price_prediction_encoders.pkl')
           
           # サンプルデータで予測
           sample = data.iloc[0:1]
@@ -292,7 +292,7 @@ jobs:
         run: |
           echo "🎯 モデル性能テスト完了（DuckDB対応）"
           echo "📊 モデルファイルサイズ: $(ls -lh src/ml/models/trained/house_price_prediction.pkl | awk '{print $5}')"
-          echo "📊 前処理器ファイルサイズ: $(ls -lh src/ml/models/trained/preprocessor.pkl | awk '{print $5}')"
+          echo "📊 前処理器ファイルサイズ: $(ls -lh src/ml/models/trained/house_price_prediction_encoders.pkl | awk '{print $5}')"
           echo "📊 DuckDBデータベースサイズ: $(ls -lh src/ml/data/dwh/house_price_dwh.duckdb | awk '{print $5}')"
 
   # GitHub Release作成（タグプッシュ時のみ）
@@ -321,14 +321,14 @@ jobs:
         with:
           files: |
             src/ml/models/trained/house_price_prediction.pkl
-            src/ml/models/trained/preprocessor.pkl
+            src/ml/models/trained/house_price_prediction_encoders.pkl
             src/ml/data/dwh/house_price_dwh.duckdb
           body: |
             ## 🏠 House Price Prediction Model Release (DuckDB対応)
             
             ### 📦 含まれるファイル
             - `house_price_prediction.pkl`: 学習済みモデル
-            - `preprocessor.pkl`: 前処理器
+            - `house_price_prediction_encoders.pkl`: 前処理器
             - `house_price_dwh.duckdb`: DuckDBデータウェアハウス
             
             ### 🚀 使用方法
@@ -338,7 +338,7 @@ jobs:
             
             # モデルと前処理器を読み込み
             model = joblib.load('house_price_prediction.pkl')
-            preprocessor = joblib.load('preprocessor.pkl')
+            preprocessor = joblib.load('house_price_prediction_encoders.pkl')
             
             # DuckDBからデータを読み込み
             conn = duckdb.connect('house_price_dwh.duckdb')
