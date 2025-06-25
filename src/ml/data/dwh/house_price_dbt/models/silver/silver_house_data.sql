@@ -19,7 +19,6 @@ WITH cleaned_data AS (
     year_built,
     condition,
     created_at,
-    updated_at,
     
     -- Data validation and cleaning
     CASE 
@@ -87,7 +86,6 @@ final_data AS (
     house_age,
     bed_bath_ratio,
     created_at,
-    updated_at,
     
     -- Data quality flags
     CASE 

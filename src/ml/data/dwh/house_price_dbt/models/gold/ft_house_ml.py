@@ -12,11 +12,11 @@ def model(dbt, session):
     This model performs feature engineering and preprocessing for ML models
     """
     
-    # Get silver data
+    # Get silver data - dbtのPythonモデルではdf()メソッドを使用
     silver_df = dbt.ref("silver_house_data")
     
     # Convert to pandas DataFrame
-    df = silver_df.to_pandas()
+    df = silver_df.df()
     
     # Filter complete records only
     df = df[df['is_complete_record'] == True].copy()
@@ -138,11 +138,17 @@ def _select_features(df):
     
     # Feature columns (exclude target and metadata)
     exclude_cols = [
-        'id', 'created_at', 'updated_at', 'is_complete_record',
+        'id', 'created_at', 'is_complete_record',
         'is_price_outlier', 'is_age_outlier', 'location', 'condition'
     ]
     
     feature_cols = [col for col in df.columns if col not in exclude_cols + [target]]
+    
+    # 必須特徴量
+    essential_features = [
+        'sqft', 'bedrooms', 'bathrooms', 'year_built',
+        'location_encoded', 'condition_score'
+    ]
     
     # Ensure we have enough features
     if len(feature_cols) > 5:
@@ -151,7 +157,6 @@ def _select_features(df):
         top_features = correlations[1:11].index.tolist()  # Exclude target itself
         
         # Add essential features
-        essential_features = ['sqft', 'bedrooms', 'bathrooms', 'year_built']
         selected_features = list(set(top_features + essential_features))
         
         # Filter to available features
@@ -162,6 +167,11 @@ def _select_features(df):
         df = df[final_cols].copy()
         
         print(f"Selected {len(selected_features)} features for ML model")
+    else:
+        # 特徴量が少ない場合も必須特徴量を含める
+        selected_features = [f for f in essential_features if f in df.columns]
+        final_cols = selected_features + [target]
+        df = df[final_cols].copy()
     
     return df
 
