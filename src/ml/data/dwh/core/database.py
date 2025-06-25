@@ -32,9 +32,9 @@ class DWHManager:
             db_path: Path to the DuckDB database file. If None, uses default path.
         """
         if db_path is None:
-            # Default database path in the dwh directory
+            # Default database path in the data directory
             current_dir = Path(__file__).parent
-            db_path = current_dir / "house_price_dwh.duckdb"
+            db_path = current_dir.parent / "data" / "house_price_dwh.duckdb"
 
         self.db_path = Path(db_path)
         self.connection: Optional[duckdb.DuckDBPyConnection] = None
