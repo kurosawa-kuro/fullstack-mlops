@@ -93,12 +93,12 @@ def main():
     )
     parser.add_argument(
         "--info-only", 
-        action="store_true",
-        help="Only show schema information without making changes"
+        action="store_true", 
+        help="Only show schema information without making changes",
     )
     parser.add_argument(
         "--check-schema", 
-        action="store_true",
+        action="store_true", 
         help="Check current schema status"
     )
     parser.add_argument(
@@ -106,7 +106,7 @@ def main():
         type=str, 
         default="DEBUG",
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
-        help="Logging level"
+        help="Logging level",
     )
     
     args = parser.parse_args()
@@ -125,20 +125,20 @@ def main():
             logger.info("Showing schema information...")
             schema_info = get_schema_info(dwh_manager)
             
-            print("\n" + "="*60)
+            print("\n" + "=" * 60)
             print("DWH SCHEMA INFORMATION")
-            print("="*60)
+            print("=" * 60)
             print(f"Total Tables: {schema_info['total_tables']}")
             print(f"Total Views: {schema_info['total_views']}")
             
-            if schema_info['tables']:
+            if schema_info["tables"]:
                 print("\nTables:")
-                for table_name, table_info in schema_info['tables'].items():
+                for table_name, table_info in schema_info["tables"].items():
                     print(f"  - {table_name}: {table_info['row_count']} rows")
-                    for col in table_info['columns']:
+                    for col in table_info["columns"]:
                         print(f"    * {col['column_name']}: {col['data_type']}")
             
-            if schema_info['views']:
+            if schema_info["views"]:
                 print(f"\nViews: {', '.join(schema_info['views'])}")
             
             return
@@ -148,20 +148,20 @@ def main():
             logger.info("Validating existing data...")
             validation_results = validate_ingestion(dwh_manager)
             
-            print("\n" + "="*60)
+            print("\n" + "=" * 60)
             print("DATA VALIDATION RESULTS")
-            print("="*60)
+            print("=" * 60)
             print(f"Status: {validation_results['status']}")
             
-            if validation_results['checks']:
+            if validation_results["checks"]:
                 print("\nChecks:")
-                for check_name, check_result in validation_results['checks'].items():
+                for check_name, check_result in validation_results["checks"].items():
                     status = "✅ PASS" if check_result else "❌ FAIL"
                     print(f"  - {check_name}: {status}")
             
-            if validation_results['errors']:
+            if validation_results["errors"]:
                 print("\nErrors:")
-                for error in validation_results['errors']:
+                for error in validation_results["errors"]:
                     print(f"  - {error}")
             
             return
@@ -172,7 +172,13 @@ def main():
             tables = dwh_manager.list_tables()
             print(f"\nCurrent tables: {tables}")
             
-            required_tables = ["raw_house_data", "fact_house_transactions", "dim_locations", "dim_conditions", "dim_years"]
+            required_tables = [
+                "raw_house_data",
+                "fact_house_transactions",
+                "dim_locations",
+                "dim_conditions",
+                "dim_years",
+            ]
             missing_tables = [table for table in required_tables if table not in tables]
             
             if missing_tables:
@@ -213,9 +219,9 @@ def main():
         result = ingest_house_data(str(csv_path), dwh_manager)
         
         # Print results
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("DATA INGESTION RESULTS")
-        print("="*60)
+        print("=" * 60)
         print(f"Status: {result['ingestion_status']}")
         print(f"Timestamp: {result['timestamp']}")
         
@@ -234,9 +240,18 @@ def main():
                 if summary:
                     print(f"\nSummary Statistics:")
                     print(f"  - Total houses: {summary.get('total_houses', 'N/A')}")
-                    print(f"  - Average price: ${summary.get('avg_price', 'N/A'):,.2f}" if summary.get('avg_price') else "  - Average price: N/A")
-                    print(f"  - Average sqft: {summary.get('avg_sqft', 'N/A'):,.0f}" if summary.get('avg_sqft') else "  - Average sqft: N/A")
-                    print(f"  - Average price per sqft: ${summary.get('avg_price_per_sqft', 'N/A'):,.2f}" if summary.get('avg_price_per_sqft') else "  - Average price per sqft: N/A")
+                    if summary.get('avg_price'):
+                        print(f"  - Average price: ${summary.get('avg_price', 'N/A'):,.2f}")
+                    else:
+                        print("  - Average price: N/A")
+                    if summary.get('avg_sqft'):
+                        print(f"  - Average sqft: {summary.get('avg_sqft', 'N/A'):,.0f}")
+                    else:
+                        print("  - Average sqft: N/A")
+                    if summary.get('avg_price_per_sqft'):
+                        print(f"  - Average price per sqft: ${summary.get('avg_price_per_sqft', 'N/A'):,.2f}")
+                    else:
+                        print("  - Average price per sqft: N/A")
                 
                 location_analytics = result['summary_statistics']['location_analytics']
                 if location_analytics:

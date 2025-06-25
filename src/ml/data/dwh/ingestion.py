@@ -244,7 +244,9 @@ def _transform_and_load_fact_data(df: pd.DataFrame, dwh_manager: DWHManager) -> 
         final_count = len(df_fact)
         
         if final_count < initial_count:
-            logger.warning(f"Removed {initial_count - final_count} rows with missing dimension mappings")
+            logger.warning(
+                f"Removed {initial_count - final_count} rows with missing dimension mappings"
+            )
         
         logger.info(f"Final transformed data: {len(df_fact)} rows")
         
