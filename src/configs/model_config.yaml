@@ -11,6 +11,21 @@ model:
     random_state: 42
     n_jobs: -1
 
+# Base models for ensemble
+base_models:
+  RandomForest:
+    n_estimators: 100
+    max_depth: 10
+    min_samples_split: 2
+    min_samples_leaf: 1
+    random_state: 42
+    n_jobs: -1
+  LinearRegression:
+    fit_intercept: true
+    normalize: false
+    copy_X: true
+    n_jobs: -1
+
 # Alternative models for comparison
 alternative_models:
   RandomForest:
@@ -27,6 +42,12 @@ alternative_models:
     learning_rate: 0.05
     subsample: 0.8
     random_state: 42
+
+# Ensemble configuration
+ensemble:
+  method: "voting"
+  weights: [0.7, 0.3]
+  voting: "soft"
 
 # Data configuration
 data:

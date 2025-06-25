@@ -164,29 +164,26 @@ curl -X POST "http://localhost:8000/predict" \
 GitHub Actionsで自動テスト・DWH構築・訓練・リリースを実行します。
 
 ### 実行トリガー
-- **Push**: main/master/developブランチへのプッシュ
-- **Pull Request**: main/master/developブランチへのPR
+- **Push**: 全ブランチへのプッシュ
+- **Pull Request**: 全ブランチへのPR
 - **手動実行**: workflow_dispatchで手動実行可能
 
 ### ジョブ構成
 
 #### 1. コード品質チェック（code-quality）
 - **Black**: コードフォーマットチェック
-- **isort**: インポート順序チェック
 - **flake8**: リンター
-- **mypy**: 型チェック
 - **bandit**: セキュリティチェック
 
-#### 2. テスト実行（test）
+#### 2. モデル訓練（train-model）
 - **DuckDB DWH構築**: サンプルデータでDWHを構築
 - **モデル訓練**: DuckDBベースのモデル訓練
+- **アーティファクト保存**: モデル・DWHファイルを保存
+
+#### 3. テスト実行（test）
+- **アーティファクト取得**: 訓練済みモデル・DWHファイルを取得
 - **テスト実行**: pytestでテスト実行
 - **カバレッジ**: Codecovにカバレッジレポート送信
-
-#### 3. モデル訓練（train-model）
-- **DuckDB DWH構築**: 本番用DWHを構築
-- **モデル訓練**: DuckDBデータを使用したモデル訓練
-- **アーティファクト保存**: モデル・DWHファイルを保存
 
 #### 4. モデル性能テスト（model-performance）
 - **統合テスト**: DuckDBとモデルの統合テスト
@@ -198,36 +195,102 @@ GitHub Actionsで自動テスト・DWH構築・訓練・リリースを実行し
 
 ### DuckDB対応の特徴
 - **データソース**: CSV → DuckDB DWHに変更
-- **モデル訓練**: `train_model.py`でDuckDB直接接続
-- **ビュー活用**: `v_house_analytics`ビューからデータ取得
-- **アーティファクト**: DWHファイルも保存・配布
+- **DWH構築**: 自動でDuckDBデータウェアハウスを構築
+- **モデル訓練**: DuckDBから直接データを読み込み
+- **テスト**: DuckDB統合テストを実行
+- **アーティファクト**: モデルとDWHファイルを保存
 
-### ローカル開発
+### テスト戦略
+- **スキップ機能**: ファイルが存在しない場合はテストをスキップ
+- **統合テスト**: DuckDBとモデルの統合動作確認
+- **カバレッジ**: コードカバレッジの測定と報告
+
+### 設定ファイル対応
+- **base_models**: アンサンブル用の基本モデル設定
+- **ensemble**: アンサンブル手法の設定
+- **training**: 訓練パラメータの設定
+
+---
+
+## 🐛 トラブルシューティング
+
+### よくある問題と解決方法
+
+#### 1. 依存関係エラー
 ```bash
-# CI/CDと同じ環境でテスト
-make test
+# 仮想環境を再作成
+make clean
+make venv
+make install
+```
+
+#### 2. DuckDB DWHエラー
+```bash
+# DWHを再構築
+make clean-dwh
 make dwh
+```
+
+#### 3. モデル訓練エラー
+```bash
+# モデルディレクトリをクリアして再訓練
+rm -rf src/ml/models/trained/*
 make train-ensemble
+```
+
+#### 4. CI/CDエラー
+- **ブランチ制限**: 全ブランチでCIが実行されるように設定済み
+- **テスト失敗**: ファイルが存在しない場合はスキップ機能あり
+- **設定ファイル**: base_models, ensemble, trainingセクションが必須
+
+#### 5. コード品質エラー
+```bash
+# 自動整形
+make format
+# リンター実行
+make lint
 ```
 
 ---
 
-## ⚠️ トラブルシューティング・FAQ
+## 📝 開発ガイドライン
 
-- **依存関係エラー**: Python3.12対応済み。`requirements.txt`のバージョンを確認
-- **WSL2でのポート問題**: `localhost`でアクセス不可な場合はWSL2のIPアドレスを使用
-- **MLflow/モデルファイルが見つからない**: `make train-ensemble`で再訓練
-- **DuckDB DWHエラー**: `make dwh-force`でDWH再構築
-- **CI/CDエラー**: `.github/workflows/ml-cicd.yml`のログを確認
-- **Docker/CLI/MLflowの詳細FAQ**: README内該当セクション参照
+### コード品質
+- **Black**: コードフォーマット
+- **flake8**: リンター
+- **bandit**: セキュリティチェック
+
+### テスト
+- **pytest**: テストフレームワーク
+- **カバレッジ**: コードカバレッジ測定
+- **統合テスト**: DuckDBとモデルの統合テスト
+
+### CI/CD
+- **自動化**: プッシュ・PRで自動実行
+- **アーティファクト**: モデル・DWHファイルの保存
+- **リリース**: タグプッシュで自動リリース
 
 ---
 
-## 🤝 貢献・ライセンス
+## 🤝 コントリビューション
 
-- Issue・PR・提案歓迎！
-- ライセンス: MIT
+1. フォークしてブランチを作成
+2. 変更をコミット
+3. プルリクエストを作成
+4. CI/CDが自動でテスト・訓練を実行
 
 ---
 
-ハッピーMLOps！
+## 📄 ライセンス
+
+MIT License
+
+---
+
+## 🙏 謝辞
+
+- DuckDB開発チーム
+- scikit-learn開発チーム
+- MLflow開発チーム
+- FastAPI開発チーム
+- Streamlit開発チーム
