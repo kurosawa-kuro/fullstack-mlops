@@ -100,17 +100,17 @@ class TestModelPipeline:
 
         try:
             conn = duckdb.connect(dwh_path)
-            
+
             # テーブル一覧を取得
             tables = conn.execute("SHOW TABLES").fetchdf()
             assert not tables.empty, "DWHにテーブルが存在しません"
-            
+
             # ビューの存在確認
             views = conn.execute("SHOW TABLES").fetchdf()
             assert len(views) > 0, "DWHにビューが存在しません"
-            
+
             conn.close()
-            
+
         except Exception as e:
             pytest.fail(f"DuckDB DWHへのアクセスに失敗しました: {e}")
 
@@ -133,16 +133,18 @@ class TestModelPipeline:
 
                 # サンプルデータで予測
                 sample = data.iloc[0:1]
-                X = pd.DataFrame({
-                    'sqft': sample['sqft'],
-                    'bedrooms': sample['bedrooms'],
-                    'bathrooms': sample['bathrooms'],
-                    'house_age': sample['house_age'],
-                    'price_per_sqft': sample['price'] / sample['sqft'],
-                    'bed_bath_ratio': sample['bedrooms'] / sample['bathrooms'],
-                    'location_name': sample['location_name'],
-                    'condition_name': sample['condition_name']
-                })
+                X = pd.DataFrame(
+                    {
+                        "sqft": sample["sqft"],
+                        "bedrooms": sample["bedrooms"],
+                        "bathrooms": sample["bathrooms"],
+                        "house_age": sample["house_age"],
+                        "price_per_sqft": sample["price"] / sample["sqft"],
+                        "bed_bath_ratio": sample["bedrooms"] / sample["bathrooms"],
+                        "location_name": sample["location_name"],
+                        "condition_name": sample["condition_name"],
+                    }
+                )
 
                 X_transformed = preprocessor.transform(X)
                 prediction = model.predict(X_transformed)
