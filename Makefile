@@ -1,7 +1,7 @@
 # ML Model CI/CD Makefile
 # 開発者体験向上のための便利コマンド集
 
-.PHONY: help install test lint format clean train train-force pipeline pipeline-quick release setup-dev check-model status venv
+.PHONY: help install test lint format clean train train-force pipeline pipeline-quick release setup-dev check-model status venv dwh dwh-explore dwh-backup dwh-stats
 
 # デフォルトターゲット
 help:
@@ -21,6 +21,13 @@ help:
 	@echo "  release        - リリース用タグを作成"
 	@echo "  check-model    - モデル性能確認"
 	@echo "  status         - パイプライン状態確認"
+	@echo ""
+	@echo "🗄️ DuckDB DWH関連:"
+	@echo "  dwh            - DWH構築とデータインジェスション"
+	@echo "  dwh-force      - DWH強制再構築"
+	@echo "  dwh-explore    - DWHデータの探索・分析"
+	@echo "  dwh-backup     - DWHデータベースのバックアップ"
+	@echo "  dwh-stats      - DWH統計情報表示"
 	@echo ""
 
 # 仮想環境セットアップ
@@ -157,9 +164,81 @@ check-model:
 # パイプライン状態確認
 status:
 	@echo "📋 パイプライン状態確認中..."
-	@echo "�� 必要なファイル:"
+	@echo "📁 必要なファイル:"
 	@ls -la src/configs/model_config.yaml 2>/dev/null || echo "❌ src/configs/model_config.yaml が見つかりません"
 	@ls -la src/ml/data/raw/house_data.csv 2>/dev/null || echo "❌ src/ml/data/raw/house_data.csv が見つかりません"
 	@ls -la src/ml/models/trained/house_price_prediction.pkl 2>/dev/null || echo "❌ 学習済みモデルが見つかりません"
 	@ls -la src/ml/models/trained/preprocessor.pkl 2>/dev/null || echo "❌ 前処理器が見つかりません"
-	@echo "✅ 状態確認完了" 
+	@echo ""
+	@echo "🗄️ DWH状態:"
+	@ls -la src/ml/data/dwh/house_price_dwh.duckdb 2>/dev/null || echo "❌ DWHデータベースが見つかりません"
+	@echo "✅ 状態確認完了"
+
+# DWH構築とデータインジェスション
+dwh:
+	@echo "🗄️ DWH構築とデータインジェスション中..."
+	@if [ -d ".venv" ]; then \
+		.venv/bin/python src/ml/data/dwh/setup_dwh.py --csv-file src/ml/data/raw/house_data.csv; \
+	else \
+		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
+		exit 1; \
+	fi
+	@echo "✅ DWH構築完了"
+
+# DWH強制再構築
+dwh-force:
+	@echo "🗄️ DWH強制再構築中..."
+	@if [ -d ".venv" ]; then \
+		.venv/bin/python src/ml/data/dwh/setup_dwh.py --csv-file src/ml/data/raw/house_data.csv --force-schema; \
+	else \
+		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
+		exit 1; \
+	fi
+	@echo "✅ DWH強制再構築完了"
+
+# DWHデータの探索・分析
+dwh-explore:
+	@echo "🔍 DWHデータの探索・分析中..."
+	@if [ -d ".venv" ]; then \
+		.venv/bin/python src/ml/data/dwh/explore_dwh.py; \
+	else \
+		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
+		exit 1; \
+	fi
+	@echo "✅ DWH探索完了"
+
+# DWHデータベースのバックアップ
+dwh-backup:
+	@echo "💾 DWHデータベースのバックアップ中..."
+	@mkdir -p src/ml/data/dwh/backups
+	@DATE=$$(date +%Y%m%d_%H%M%S); \
+	if [ -f "src/ml/data/dwh/house_price_dwh.duckdb" ]; then \
+		cp src/ml/data/dwh/house_price_dwh.duckdb src/ml/data/dwh/backups/house_price_dwh_$$DATE.duckdb; \
+		echo "✅ バックアップ完了: house_price_dwh_$$DATE.duckdb"; \
+		ls -lh src/ml/data/dwh/backups/house_price_dwh_$$DATE.duckdb; \
+	else \
+		echo "❌ DWHデータベースが見つかりません。先に 'make dwh' を実行してください"; \
+		exit 1; \
+	fi
+
+# DWH統計情報表示
+dwh-stats:
+	@echo "📊 DWH統計情報表示中..."
+	@if [ -d ".venv" ]; then \
+		.venv/bin/python -c "import duckdb; import os; db_path='src/ml/data/dwh/house_price_dwh.duckdb'; \
+		if os.path.exists(db_path): \
+			con = duckdb.connect(db_path); \
+			result = con.execute('SELECT COUNT(*) FROM fact_house_transactions').fetchone(); \
+			print(f'📈 総レコード数: {result[0]:,}'); \
+			stats = con.execute('SELECT * FROM v_summary_statistics').fetchone(); \
+			print(f'💰 平均価格: $${stats[1]:,.2f}'); \
+			print(f'📏 平均面積: {stats[5]:,.0f} sqft'); \
+			con.close(); \
+		else: \
+			print('❌ DWHデータベースが見つかりません'); \
+		"; \
+	else \
+		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
+		exit 1; \
+	fi
+	@echo "✅ DWH統計情報表示完了" 

@@ -61,12 +61,308 @@ house-price-predictor/
 │   ├── services/ui/       # Streamlitフロントエンド
 │   └── ml/                 # 機械学習関連
 │       ├── data/           # データクリーニングと前処理スクリプト
+│       │   └── dwh/        # DuckDB DWH構築と管理
 │       ├── features/       # 特徴量エンジニアリングパイプライン
 │       ├── models/         # モデル訓練と評価
 │       └── pipeline/       # エンドツーエンドパイプライン
 ├── requirements.txt        # Python依存関係
 └── README.md               # このファイル
 ```
+
+---
+
+## 🗄️ DuckDB データウェアハウス (DWH) 構築
+
+このプロジェクトでは、DuckDBを使用した高性能なデータウェアハウスを構築し、住宅価格データの分析と機械学習パイプラインの基盤として活用します。
+
+### 🎯 DWHの特徴
+
+- **高性能**: DuckDBの列指向ストレージによる高速クエリ処理
+- **軽量**: ファイルベースのデータベースでサーバー不要
+- **SQL互換**: 標準SQLによる直感的なデータ操作
+- **分析ビュー**: 地域別・状態別の自動分析ビュー
+- **スケーラブル**: 大規模データセットにも対応
+
+### 📊 DWHスキーマ設計
+
+#### ディメンションテーブル
+- **`dim_locations`**: 地域情報（Suburb, Downtown, Rural, Waterfront等）
+- **`dim_conditions`**: 住宅状態（Poor, Fair, Good, Excellent）
+- **`dim_years`**: 築年数情報（年、年代、世紀）
+
+#### ファクトテーブル
+- **`fact_house_transactions`**: 住宅取引データ（価格、面積、部屋数等）
+
+#### 分析ビュー
+- **`v_house_analytics`**: 住宅分析統合ビュー
+- **`v_location_analytics`**: 地域別分析
+- **`v_condition_analytics`**: 状態別分析
+- **`v_summary_statistics`**: 全体統計
+
+### 🚀 DWH構築とデータインジェスション
+
+#### 1. 依存関係のインストール
+
+```bash
+# DuckDBのインストール
+pip install duckdb
+
+# または requirements.txtに追加
+echo "duckdb>=1.3.0" >> requirements.txt
+pip install -r requirements.txt
+```
+
+#### 2. DWH構築とデータ投入
+
+```bash
+# CSVファイルからDWHを構築
+python src/ml/data/dwh/setup_dwh.py \
+  --csv-file src/ml/data/raw/house_data.csv
+
+# 強制再構築（スキーマを再作成したい場合）
+python src/ml/data/dwh/setup_dwh.py \
+  --csv-file src/ml/data/raw/house_data.csv \
+  --force-schema
+```
+
+**期待される出力例：**
+```
+2025-06-25 08:34:01,000 - __main__ - INFO - Initialized DWH manager
+2025-06-25 08:34:01,000 - __main__ - INFO - Starting data ingestion from: src/ml/data/raw/house_data.csv
+2025-06-25 08:34:01,041 - ml.data.dwh.ingestion - INFO - Loaded CSV with 84 rows and 7 columns
+2025-06-25 08:34:01,171 - ml.data.dwh.ingestion - INFO - Raw data ingestion completed: 84 rows inserted
+2025-06-25 08:34:01,314 - ml.data.dwh.ingestion - INFO - Fact data transformation completed: 84 rows inserted
+2025-06-25 08:34:01,321 - ml.data.dwh.ingestion - INFO - Data ingestion completed successfully
+
+============================================================
+DATA INGESTION RESULTS
+============================================================
+Status: success
+Timestamp: 2025-06-25T08:34:01.321908
+
+Raw Data Stats:
+  - Rows inserted: 84
+  - Columns: 8
+
+Fact Data Stats:
+  - Rows inserted: 84
+  - Rows processed: 84
+  - Rows with missing dimensions: 0
+
+Summary Statistics:
+  - Total houses: 84
+  - Average price: $628,559.52
+  - Average sqft: 2,192
+  - Average price per sqft: $268.09
+
+Location Analytics (Top 3):
+  1. Waterfront: $1,306,000 avg price
+  2. Mountain: $936,000 avg price
+  3. Downtown: $666,471 avg price
+```
+
+### 🔍 DWHデータの探索
+
+#### 1. Pythonスクリプトでの探索
+
+```bash
+# DWHの内容を詳細表示
+python src/ml/data/dwh/explore_dwh.py
+```
+
+**出力例：**
+```
+============================================================
+🏠 HOUSE PRICE DWH EXPLORER
+============================================================
+
+📊 テーブル一覧 (5個):
+  1. dim_conditions
+  2. dim_locations
+  3. dim_years
+  4. fact_house_transactions
+  5. raw_house_data
+
+👁️ ビュー一覧 (4個):
+  1. v_condition_analytics
+  2. v_house_analytics
+  3. v_location_analytics
+  4. v_summary_statistics
+
+📈 サマリー統計
+============================================================
+総住宅数: 84
+平均価格: $628,559.52
+最低価格: $249,000.00
+最高価格: $1,680,000.00
+平均面積: 2,192 sqft
+平均単価: $268.09/sqft
+
+📍 地域別分析:
+location_name location_type  house_count    avg_price    avg_sqft  avg_price_per_sqft
+   Waterfront       Premium           15 1.306000e+06 3322.800000          391.488445
+     Mountain       Premium            2 9.360000e+05 2935.000000          318.744339
+     Downtown         Urban           17 6.664706e+05 2415.058824          275.168866
+```
+
+#### 2. DuckDB CLIでの直接操作
+
+```bash
+# DuckDB CLIのインストール（Ubuntu/WSL）
+sudo snap install duckdb
+
+# データベースに接続
+duckdb src/ml/data/dwh/house_price_dwh.duckdb
+
+# 基本的なコマンド
+.tables                    # テーブル一覧表示
+.schema                    # スキーマ表示
+SELECT * FROM v_summary_statistics;  # サマリー統計
+.quit                      # 終了
+```
+
+#### 3. VSCodeでのGUI参照
+
+1. **VSCode拡張のインストール**:
+   - VSCode Marketplaceで「DuckDB」を検索
+   - DuckDB拡張をインストール
+
+2. **データベースファイルを開く**:
+   ```bash
+   # WSLからVSCodeを起動
+   code .
+   ```
+   - `src/ml/data/dwh/house_price_dwh.duckdb`を右クリック
+   - 「Open With DuckDB」を選択
+
+### 📊 分析クエリ例
+
+#### 価格帯別の住宅数分析
+```sql
+SELECT 
+  CASE 
+    WHEN price < 300000 THEN 'Under $300k'
+    WHEN price < 500000 THEN '$300k-$500k'
+    WHEN price < 800000 THEN '$500k-$800k'
+    ELSE 'Over $800k'
+  END as price_range,
+  COUNT(*) as house_count,
+  AVG(price) as avg_price
+FROM fact_house_transactions
+GROUP BY price_range
+ORDER BY MIN(price);
+```
+
+#### 築年数別の平均価格分析
+```sql
+SELECT 
+  y.decade,
+  AVG(h.price) as avg_price,
+  COUNT(*) as house_count,
+  AVG(h.sqft) as avg_sqft
+FROM fact_house_transactions h
+JOIN dim_years y ON h.year_built_id = y.year_id
+GROUP BY y.decade
+ORDER BY y.decade;
+```
+
+#### 地域・状態別の価格分析
+```sql
+SELECT 
+  l.location_name,
+  c.condition_name,
+  COUNT(*) as house_count,
+  AVG(h.price) as avg_price,
+  AVG(h.price/h.sqft) as avg_price_per_sqft
+FROM fact_house_transactions h
+JOIN dim_locations l ON h.location_id = l.location_id
+JOIN dim_conditions c ON h.condition_id = c.condition_id
+GROUP BY l.location_name, c.condition_name
+ORDER BY avg_price DESC;
+```
+
+### 🔧 DWH管理コマンド
+
+#### データベース情報の確認
+```bash
+# ファイルサイズ確認
+ls -lh src/ml/data/dwh/house_price_dwh.duckdb
+
+# データベース統計
+python -c "
+import duckdb
+con = duckdb.connect('src/ml/data/dwh/house_price_dwh.duckdb')
+result = con.execute('SELECT COUNT(*) FROM fact_house_transactions').fetchone()
+print(f'Total records: {result[0]:,}')
+con.close()
+"
+```
+
+#### バックアップとリストア
+```bash
+# バックアップ作成
+cp src/ml/data/dwh/house_price_dwh.duckdb src/ml/data/dwh/backups/house_price_dwh_${DATE}.duckdb
+```
+
+### ⚠️ DWH関連のトラブルシューティング
+
+#### 1. DuckDB CLIが見つからない
+```bash
+# Ubuntu/WSLでのインストール
+sudo snap install duckdb
+
+# または、Pythonから直接実行
+python -c "
+import duckdb
+con = duckdb.connect('src/ml/data/dwh/house_price_dwh.duckdb')
+print(con.execute('SELECT * FROM v_summary_statistics').fetchall())
+con.close()
+"
+```
+
+#### 2. データベースファイルが破損
+```bash
+# バックアップから復元
+cp src/ml/data/dwh/house_price_dwh_backup.duckdb src/ml/data/dwh/house_price_dwh.duckdb
+
+# または、DWHを再構築
+python src/ml/data/dwh/setup_dwh.py \
+  --csv-file src/ml/data/raw/house_data.csv \
+  --force-schema
+```
+
+#### 3. メモリ不足エラー
+```bash
+# DuckDBのメモリ設定を調整
+python -c "
+import duckdb
+con = duckdb.connect('src/ml/data/dwh/house_price_dwh.duckdb')
+con.execute('SET memory_limit=\'1GB\'')
+# クエリ実行
+con.close()
+"
+```
+
+### 🎯 DWH活用のベストプラクティス
+
+#### 1. **定期的なバックアップ**
+```bash
+# 日次バックアップスクリプト例
+#!/bin/bash
+DATE=$(date +%Y%m%d)
+cp src/ml/data/dwh/house_price_dwh.duckdb \
+   src/ml/data/dwh/backups/house_price_dwh_${DATE}.duckdb
+```
+
+#### 2. **パフォーマンス最適化**
+- インデックスの適切な設定
+- クエリの最適化
+- 定期的なVACUUM実行
+
+#### 3. **データ品質管理**
+- 定期的なデータ整合性チェック
+- 異常値の検出と処理
+- データ更新履歴の管理
 
 ---
 
