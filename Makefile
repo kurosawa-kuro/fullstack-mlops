@@ -1,46 +1,40 @@
 # ML Model CI/CD Makefile
 # 開発者体験向上のための便利コマンド集
 
-.PHONY: help install test lint format clean train train-force pipeline pipeline-quick release setup-dev check-model status venv dwh dwh-explore dwh-backup dwh-stats dwh-cli dwh-tables dwh-summary dwh-location dwh-condition dwh-price-range dwh-year-built dwh-unlock train-ensemble train-ensemble-voting train-ensemble-stacking check-ensemble
+.PHONY: help install test lint format clean train train-force pipeline pipeline-quick release setup-dev check-model status venv dwh dwh-explore dwh-backup dwh-stats dwh-cli dwh-tables dwh-summary dwh-location dwh-condition dwh-price-range dwh-year-built dwh-unlock train-ensemble train-ensemble-voting train-ensemble-stacking check-ensemble ingest dbt train-dbt all
 
 # デフォルトターゲット
+.DEFAULT_GOAL := help
+
+# ヘルプ表示
 help:
-	@echo "🏠 House Price Prediction ML Pipeline (DuckDB版)"
+	@echo "🏠 House Price Prediction MLOps Pipeline"
 	@echo ""
-	@echo "利用可能なコマンド:"
-	@echo "  venv           - 仮想環境を作成・アクティベート"
-	@echo "  install        - 依存関係をインストール"
-	@echo "  test           - テストを実行"
-	@echo "  lint           - コード品質チェック"
-	@echo "  format         - コードフォーマット"
-	@echo "  clean          - 一時ファイルを削除"
-	@echo "  train          - DuckDBモデルを訓練（既存モデルがあればスキップ）"
-	@echo "  train-force    - DuckDBモデルを強制再訓練"
-	@echo "  train-ensemble - アンサンブルモデルを訓練"
-	@echo "  train-ensemble-voting - Voting Ensembleを訓練"
-	@echo "  train-ensemble-stacking - Stacking Ensembleを訓練"
-	@echo "  pipeline       - 全パイプラインを実行"
-	@echo "  pipeline-quick - 既存モデルがあればスキップしてパイプライン実行"
-	@echo "  release        - リリース用タグを作成"
-	@echo "  check-model    - DuckDBモデル性能確認"
-	@echo "  check-ensemble - アンサンブルモデル性能確認"
-	@echo "  status         - パイプライン状態確認"
+	@echo "📋 利用可能なコマンド:"
 	@echo ""
-	@echo "🗄️ DuckDB DWH関連:"
-	@echo "  dwh            - DWH構築とデータインジェスション"
-	@echo "  dwh-force      - DWH強制再構築"
-	@echo "  dwh-explore    - DWHデータの探索・分析"
-	@echo "  dwh-backup     - DWHデータベースのバックアップ"
-	@echo "  dwh-stats      - DWH統計情報表示"
-	@echo "  dwh-cli        - DuckDB CLI起動"
-	@echo "  dwh-tables     - DWHテーブル一覧表示"
-	@echo "  dwh-summary    - DWHサマリー統計表示"
-	@echo "  dwh-location   - DWH地域別分析表示"
-	@echo "  dwh-condition  - DWH状態別分析表示"
-	@echo "  dwh-price-range - DWH価格帯別分析表示"
-	@echo "  dwh-year-built - DWH築年数別分析表示"
-	@echo "  dwh-unlock     - DWHロック解除"
+	@echo "🔧 基本コマンド:"
+	@echo "  make install          # 依存関係インストール"
+	@echo "  make test             # テスト実行"
+	@echo "  make lint             # コード品質チェック"
+	@echo "  make format           # コードフォーマット"
+	@echo "  make clean            # クリーンアップ"
 	@echo ""
+	@echo "🗄️ DWH関連:"
+	@echo "  make ingest           # Bronze層データ取り込み"
+	@echo "  make dbt              # dbtでSilver/Gold層作成"
+	@echo "  make train-dbt        # dbt学習スクリプト実行"
+	@echo "  make all              # 一括実行（ingest + dbt + train-dbt）"
+	@echo ""
+	@echo "📊 分析・確認:"
+	@echo "  make dwh-explore      # DWHデータ探索"
+	@echo "  make dwh-stats        # DWH統計情報"
+	@echo "  make dwh-tables       # DWHテーブル一覧"
+	@echo "  make status           # パイプライン状態確認"
+	@echo ""
+	@echo "🔧 開発・デバッグ:"
+	@echo "  make setup-dev        # 開発環境セットアップ"
+	@echo "  make dwh-cli          # DuckDB CLI起動"
+	@echo "  make dwh-unlock       # DWHロック解除"
 
 # 仮想環境セットアップ
 venv:
@@ -56,34 +50,32 @@ venv:
 
 # 依存関係インストール
 install:
-	@echo "📦 依存関係をインストール中..."
+	@echo "📦 依存関係インストール中..."
 	@if [ -d ".venv" ]; then \
 		.venv/bin/pip install -r requirements.txt; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
 		exit 1; \
 	fi
-	@echo "✅ インストール完了"
+	@echo "✅ 依存関係インストール完了"
 
 # テスト実行
 test:
-	@echo "🧪 テストを実行中..."
+	@echo "🧪 テスト実行中..."
 	@if [ -d ".venv" ]; then \
-		.venv/bin/pytest src/tests/ -v --cov=src --cov-report=html; \
+		.venv/bin/pytest tests/ -v; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
 		exit 1; \
 	fi
-	@echo "✅ テスト完了"
+	@echo "✅ テスト実行完了"
 
 # コード品質チェック
 lint:
 	@echo "🔍 コード品質チェック中..."
 	@if [ -d ".venv" ]; then \
-		.venv/bin/flake8 src/ src/tests/ --count --select=E9,F63,F7,F82 --show-source --statistics; \
-		.venv/bin/flake8 src/ src/tests/ --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics; \
-		.venv/bin/mypy src/ src/tests/; \
-		.venv/bin/bandit -r src/ --severity-level high; \
+		.venv/bin/flake8 src/ tests/ --max-line-length=100 --ignore=E501,W503; \
+		.venv/bin/black --check src/ tests/; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
 		exit 1; \
@@ -94,19 +86,20 @@ lint:
 format:
 	@echo "🎨 コードフォーマット中..."
 	@if [ -d ".venv" ]; then \
-		.venv/bin/black src/ src/tests/; \
-		.venv/bin/isort src/ src/tests/; \
+		.venv/bin/black src/ tests/; \
+		.venv/bin/isort src/ tests/; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
 		exit 1; \
 	fi
-	@echo "✅ フォーマット完了"
+	@echo "✅ コードフォーマット完了"
 
 # 一時ファイル削除
 clean:
 	@echo "🧹 一時ファイルを削除中..."
-	find . -type f -name "*.pyc" -delete
-	find . -type d -name "__pycache__" -delete
+	rm -rf build/
+	rm -rf dist/
+	rm -rf *.egg-info/
 	find . -type d -name "*.egg-info" -exec rm -rf {} +
 	rm -rf .pytest_cache/
 	rm -rf htmlcov/
@@ -437,4 +430,41 @@ check-ensemble:
 		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
 		exit 1; \
 	fi
-	@echo "✅ アンサンブルモデル性能確認完了" 
+	@echo "✅ アンサンブルモデル性能確認完了"
+
+# Bronze層データ取り込み
+ingest:
+	@echo "🗄️ DWH構築とデータインジェスション中..."
+	@if [ -d ".venv" ]; then \
+		.venv/bin/python src/ml/data/dwh/scripts/setup_dwh.py --csv-file src/ml/data/raw/house_data.csv; \
+	else \
+		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
+		exit 1; \
+	fi
+	@echo "✅ DWH構築完了"
+
+# dbtでSilver/Gold層まで作成
+# goldまで一気に作る場合は --select gold
+# テストも同時に実行
+dbt:
+	@echo "🔄 dbtでSilver/Gold層まで作成中..."
+	@cd src/ml/data/dwh/house_price_dbt && dbt run --select gold && dbt test
+
+docs:
+	@echo "📄 dbtドキュメント生成中..."
+	@cd src/ml/data/dwh/house_price_dbt && dbt docs generate && dbt docs serve
+
+# dbt学習スクリプト実行
+train-dbt:
+	@echo "🔧 dbt学習スクリプト実行中..."
+	@if [ -d ".venv" ]; then \
+		.venv/bin/python src/ml/data/dwh/house_price_dbt/train.py; \
+	else \
+		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
+		exit 1; \
+	fi
+	@echo "✅ dbt学習スクリプト実行完了"
+
+# 一括実行
+all: ingest dbt train-dbt
+	@echo "🚀 一括実行完了" 

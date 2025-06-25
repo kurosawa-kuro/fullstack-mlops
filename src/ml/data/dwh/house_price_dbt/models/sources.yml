@@ -1,0 +1,159 @@
+version: 2
+
+sources:
+  - name: raw
+    description: "Raw data tables from Python ingestion process"
+    database: house_price_dwh
+    schema: main
+    tables:
+      - name: bronze_raw_house_data
+        description: "Raw house data ingested from CSV (Bronze Layer)"
+        columns:
+          - name: id
+            description: "Primary key"
+            tests:
+              - not_null
+              - unique
+          - name: price
+            description: "House price in USD"
+            tests:
+              - not_null
+          - name: sqft
+            description: "Square footage"
+            tests:
+              - not_null
+          - name: bedrooms
+            description: "Number of bedrooms"
+            tests:
+              - not_null
+          - name: bathrooms
+            description: "Number of bathrooms"
+            tests:
+              - not_null
+          - name: location
+            description: "Location name"
+            tests:
+              - not_null
+          - name: year_built
+            description: "Year the house was built"
+            tests:
+              - not_null
+          - name: condition
+            description: "House condition"
+            tests:
+              - not_null
+          - name: created_at
+            description: "Record creation timestamp"
+          - name: updated_at
+            description: "Record update timestamp"
+      
+      - name: fact_house_transactions
+        description: "Fact table with house transaction data"
+        columns:
+          - name: transaction_id
+            description: "Primary key"
+            tests:
+              - not_null
+              - unique
+          - name: house_id
+            description: "House identifier"
+            tests:
+              - not_null
+          - name: location_id
+            description: "Location dimension key"
+            tests:
+              - not_null
+          - name: condition_id
+            description: "Condition dimension key"
+            tests:
+              - not_null
+          - name: year_built_id
+            description: "Year dimension key"
+            tests:
+              - not_null
+          - name: price
+            description: "House price"
+            tests:
+              - not_null
+          - name: sqft
+            description: "Square footage"
+            tests:
+              - not_null
+          - name: bedrooms
+            description: "Number of bedrooms"
+            tests:
+              - not_null
+          - name: bathrooms
+            description: "Number of bathrooms"
+            tests:
+              - not_null
+      
+      - name: dim_locations
+        description: "Location dimension table"
+        columns:
+          - name: location_id
+            description: "Primary key"
+            tests:
+              - not_null
+              - unique
+          - name: location_name
+            description: "Location name"
+            tests:
+              - not_null
+              - unique
+          - name: location_type
+            description: "Location type"
+            tests:
+              - not_null
+          - name: is_active
+            description: "Active flag"
+            tests:
+              - not_null
+      
+      - name: dim_conditions
+        description: "Condition dimension table"
+        columns:
+          - name: condition_id
+            description: "Primary key"
+            tests:
+              - not_null
+              - unique
+          - name: condition_name
+            description: "Condition name"
+            tests:
+              - not_null
+              - unique
+          - name: condition_score
+            description: "Condition score"
+            tests:
+              - not_null
+          - name: is_active
+            description: "Active flag"
+            tests:
+              - not_null
+      
+      - name: dim_years
+        description: "Year dimension table"
+        columns:
+          - name: year_id
+            description: "Primary key"
+            tests:
+              - not_null
+              - unique
+          - name: year_value
+            description: "Year value"
+            tests:
+              - not_null
+              - unique
+          - name: decade
+            description: "Decade"
+            tests:
+              - not_null
+          - name: century
+            description: "Century"
+            tests:
+              - not_null
+          - name: is_active
+            description: "Active flag"
+            tests:
+              - not_null 
