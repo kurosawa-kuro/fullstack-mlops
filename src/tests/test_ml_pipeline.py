@@ -53,7 +53,7 @@ class TestModelPipeline:
         if not os.path.exists(model_path):
             pytest.skip(f"モデルファイルが存在しません: {model_path}")
 
-        # テスト用のサンプルデータ（DuckDB形式）
+        # テスト用のサンプルデータ（前処理器が期待する形式）
         sample_data = pd.DataFrame(
             {
                 "sqft": [1500],
@@ -62,8 +62,8 @@ class TestModelPipeline:
                 "house_age": [14],  # 2024 - 2010
                 "price_per_sqft": [200],  # ダミー値
                 "bed_bath_ratio": [1.5],  # 3/2
-                "location_name": ["Suburban"],
-                "condition_name": ["Good"],
+                "location": ["Suburban"],  # location_nameではなくlocation
+                "condition": ["Good"],  # condition_nameではなくcondition
             }
         )
 
@@ -107,11 +107,11 @@ class TestModelPipeline:
     def test_duckdb_dwh_exists(self):
         """DuckDB DWHファイルが存在することを確認"""
         dwh_path = "src/ml/data/dwh/house_price_dwh.duckdb"
-
+        
         # DWHファイルが存在しない場合はスキップ
         if not os.path.exists(dwh_path):
             pytest.skip(f"DuckDB DWHが存在しません: {dwh_path}")
-
+            
         assert os.path.exists(dwh_path), f"DuckDB DWHが見つかりません: {dwh_path}"
 
     def test_duckdb_dwh_accessible(self):
@@ -161,7 +161,7 @@ class TestModelPipeline:
                 model = joblib.load(model_path)
                 preprocessor = joblib.load(preprocessor_path)
 
-                # サンプルデータで予測
+                # サンプルデータで予測（前処理器が期待する形式に変換）
                 sample = data.iloc[0:1]
                 X = pd.DataFrame(
                     {
@@ -171,8 +171,8 @@ class TestModelPipeline:
                         "house_age": sample["house_age"],
                         "price_per_sqft": sample["price"] / sample["sqft"],
                         "bed_bath_ratio": sample["bedrooms"] / sample["bathrooms"],
-                        "location_name": sample["location_name"],
-                        "condition_name": sample["condition_name"],
+                        "location": sample["location_name"],  # location_name → location
+                        "condition": sample["condition_name"],  # condition_name → condition
                     }
                 )
 
