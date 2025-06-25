@@ -50,8 +50,10 @@ jobs:
       - name: Create necessary directories
         run: |
           mkdir -p src/ml/data/raw
-          mkdir -p src/ml/data/processed
-          mkdir -p src/ml/data/dwh
+          mkdir -p src/ml/data/dwh/scripts
+          mkdir -p src/ml/data/dwh/data
+          mkdir -p src/ml/data/dwh/core
+          mkdir -p src/ml/data/dwh/config
           mkdir -p src/ml/models/trained
 
       - name: Create sample data
@@ -81,21 +83,21 @@ jobs:
       - name: Build DuckDB DWH
         run: |
           # DuckDB DWHを構築
-          python src/ml/data/dwh/setup_dwh.py \
+          python src/ml/data/dwh/scripts/setup_dwh.py \
             --csv-file src/ml/data/raw/house_data.csv \
-            --db-path src/ml/data/dwh/house_price_dwh.duckdb \
+            --db-path src/ml/data/dwh/data/house_price_dwh.duckdb \
             --force-schema
           
           # DWHの状態確認
-          python src/ml/data/dwh/setup_dwh.py \
-            --db-path src/ml/data/dwh/house_price_dwh.duckdb \
+          python src/ml/data/dwh/scripts/setup_dwh.py \
+            --db-path src/ml/data/dwh/data/house_price_dwh.duckdb \
             --info-only
 
       - name: Run DuckDB-based ML pipeline
         run: |
           python src/ml/models/train_model.py \
             --config src/configs/model_config.yaml \
-            --duckdb-path src/ml/data/dwh/house_price_dwh.duckdb \
+            --duckdb-path src/ml/data/dwh/data/house_price_dwh.duckdb \
             --models-dir src/ml/models \
             --view-name v_house_analytics
 
@@ -112,7 +114,7 @@ jobs:
       - name: Upload model artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: trained-models-${{ github.ref_name }}
+          name: trained-models-${{ github.sha }}
           path: |
             src/ml/models/trained/house_price_prediction.pkl
             src/ml/models/trained/house_price_prediction_encoders.pkl
@@ -121,8 +123,8 @@ jobs:
       - name: Upload DuckDB database
         uses: actions/upload-artifact@v4
         with:
-          name: duckdb-dwh-${{ github.ref_name }}
-          path: src/ml/data/dwh/house_price_dwh.duckdb
+          name: duckdb-dwh-${{ github.sha }}
+          path: src/ml/data/dwh/data/house_price_dwh.duckdb
           retention-days: 30
 
   # テスト実行（DuckDB DWH構築後のテスト）
@@ -155,14 +157,14 @@ jobs:
       - name: Download model artifacts
         uses: actions/download-artifact@v4
         with:
-          name: trained-models-${{ github.ref_name }}
+          name: trained-models-${{ github.sha }}
           path: src/ml/models/trained/
 
       - name: Download DuckDB database
         uses: actions/download-artifact@v4
         with:
-          name: duckdb-dwh-${{ github.ref_name }}
-          path: src/ml/data/dwh/
+          name: duckdb-dwh-${{ github.sha }}
+          path: src/ml/data/dwh/data/
 
       - name: Run tests
         run: |
@@ -196,14 +198,14 @@ jobs:
       - name: Download model artifacts
         uses: actions/download-artifact@v4
         with:
-          name: trained-models-${{ github.ref_name }}
+          name: trained-models-${{ github.sha }}
           path: src/ml/models/trained/
 
       - name: Download DuckDB database
         uses: actions/download-artifact@v4
         with:
-          name: duckdb-dwh-${{ github.ref_name }}
-          path: src/ml/data/dwh/
+          name: duckdb-dwh-${{ github.sha }}
+          path: src/ml/data/dwh/data/
 
       - name: Run model performance tests
         run: |
@@ -219,7 +221,7 @@ jobs:
           import pandas as pd
           
           # DuckDBからデータを読み込み
-          conn = duckdb.connect('src/ml/data/dwh/house_price_dwh.duckdb')
+          conn = duckdb.connect('src/ml/data/dwh/data/house_price_dwh.duckdb')
           data = conn.execute('SELECT * FROM v_house_analytics LIMIT 5').fetchdf()
           conn.close()
           
@@ -252,7 +254,7 @@ jobs:
           echo "🎯 モデル性能テスト完了（DuckDB対応）"
           echo "📊 モデルファイルサイズ: $(ls -lh src/ml/models/trained/house_price_prediction.pkl | awk '{print $5}')"
           echo "📊 前処理器ファイルサイズ: $(ls -lh src/ml/models/trained/house_price_prediction_encoders.pkl | awk '{print $5}')"
-          echo "📊 DuckDBデータベースサイズ: $(ls -lh src/ml/data/dwh/house_price_dwh.duckdb | awk '{print $5}')"
+          echo "📊 DuckDBデータベースサイズ: $(ls -lh src/ml/data/dwh/data/house_price_dwh.duckdb | awk '{print $5}')"
 
   # GitHub Release作成（タグプッシュ時のみ）
   create-release:
@@ -266,14 +268,14 @@ jobs:
       - name: Download model artifacts
         uses: actions/download-artifact@v4
         with:
-          name: trained-models-${{ github.ref_name }}
+          name: trained-models-${{ github.sha }}
           path: src/ml/models/trained/
 
       - name: Download DuckDB database
         uses: actions/download-artifact@v4
         with:
-          name: duckdb-dwh-${{ github.ref_name }}
-          path: src/ml/data/dwh/
+          name: duckdb-dwh-${{ github.sha }}
+          path: src/ml/data/dwh/data/
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -281,7 +283,7 @@ jobs:
           files: |
             src/ml/models/trained/house_price_prediction.pkl
             src/ml/models/trained/house_price_prediction_encoders.pkl
-            src/ml/data/dwh/house_price_dwh.duckdb
+            src/ml/data/dwh/data/house_price_dwh.duckdb
           body: |
             ## 🏠 House Price Prediction Model Release (DuckDB対応)
             

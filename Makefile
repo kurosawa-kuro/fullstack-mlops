@@ -119,7 +119,7 @@ train:
 	@if [ -d ".venv" ]; then \
 		.venv/bin/python src/ml/models/train_model.py \
 			--config src/configs/model_config.yaml \
-			--duckdb-path src/ml/data/dwh/house_price_dwh.duckdb \
+			--duckdb-path src/ml/data/dwh/data/house_price_dwh.duckdb \
 			--models-dir src/ml/models \
 			--view-name v_house_analytics; \
 	else \
@@ -134,7 +134,7 @@ train-force:
 	@if [ -d ".venv" ]; then \
 		.venv/bin/python src/ml/models/train_model.py \
 			--config src/configs/model_config.yaml \
-			--duckdb-path src/ml/data/dwh/house_price_dwh.duckdb \
+			--duckdb-path src/ml/data/dwh/data/house_price_dwh.duckdb \
 			--models-dir src/ml/models \
 			--view-name v_house_analytics \
 			--force-retrain; \
@@ -210,14 +210,14 @@ status:
 	@ls -la src/ml/models/trained/house_price_predictor_duckdb_encoders.pkl 2>/dev/null || echo "❌ DuckDB前処理器が見つかりません"
 	@echo ""
 	@echo "🗄️ DWH状態:"
-	@ls -la src/ml/data/dwh/house_price_dwh.duckdb 2>/dev/null || echo "❌ DWHデータベースが見つかりません"
+	@ls -la src/ml/data/dwh/data/house_price_dwh.duckdb 2>/dev/null || echo "❌ DWHデータベースが見つかりません"
 	@echo "✅ 状態確認完了"
 
 # DWH構築とデータインジェスション
 dwh:
 	@echo "🗄️ DWH構築とデータインジェスション中..."
 	@if [ -d ".venv" ]; then \
-		.venv/bin/python src/ml/data/dwh/setup_dwh.py --csv-file src/ml/data/raw/house_data.csv; \
+		.venv/bin/python src/ml/data/dwh/scripts/setup_dwh.py --csv-file src/ml/data/raw/house_data.csv; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
 		exit 1; \
@@ -228,7 +228,7 @@ dwh:
 dwh-force:
 	@echo "🗄️ DWH強制再構築中..."
 	@if [ -d ".venv" ]; then \
-		.venv/bin/python src/ml/data/dwh/setup_dwh.py --csv-file src/ml/data/raw/house_data.csv --force-schema; \
+		.venv/bin/python src/ml/data/dwh/scripts/setup_dwh.py --csv-file src/ml/data/raw/house_data.csv --force-schema; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
 		exit 1; \
@@ -239,7 +239,7 @@ dwh-force:
 dwh-explore:
 	@echo "🔍 DWHデータの探索・分析中..."
 	@if [ -d ".venv" ]; then \
-		.venv/bin/python src/ml/data/dwh/explore_dwh.py; \
+		.venv/bin/python src/ml/data/dwh/scripts/explore_dwh.py; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
 		exit 1; \
@@ -249,12 +249,12 @@ dwh-explore:
 # DWHデータベースのバックアップ
 dwh-backup:
 	@echo "💾 DWHデータベースのバックアップ中..."
-	@mkdir -p src/ml/data/dwh/backups
+	@mkdir -p src/ml/data/dwh/data/backups
 	@DATE=$$(date +%Y%m%d_%H%M%S); \
-	if [ -f "src/ml/data/dwh/house_price_dwh.duckdb" ]; then \
-		cp src/ml/data/dwh/house_price_dwh.duckdb src/ml/data/dwh/backups/house_price_dwh_$$DATE.duckdb; \
+	if [ -f "src/ml/data/dwh/data/house_price_dwh.duckdb" ]; then \
+		cp src/ml/data/dwh/data/house_price_dwh.duckdb src/ml/data/dwh/data/backups/house_price_dwh_$$DATE.duckdb; \
 		echo "✅ バックアップ完了: house_price_dwh_$$DATE.duckdb"; \
-		ls -lh src/ml/data/dwh/backups/house_price_dwh_$$DATE.duckdb; \
+		ls -lh src/ml/data/dwh/data/backups/house_price_dwh_$$DATE.duckdb; \
 	else \
 		echo "❌ DWHデータベースが見つかりません。先に 'make dwh' を実行してください"; \
 		exit 1; \
@@ -264,7 +264,7 @@ dwh-backup:
 dwh-stats:
 	@echo "📊 DWH統計情報表示中..."
 	@if [ -d ".venv" ]; then \
-		.venv/bin/python -c "import duckdb; import os; db_path='src/ml/data/dwh/house_price_dwh.duckdb'; \
+		.venv/bin/python -c "import duckdb; import os; db_path='src/ml/data/dwh/data/house_price_dwh.duckdb'; \
 		if os.path.exists(db_path): \
 			con = duckdb.connect(db_path); \
 			result = con.execute('SELECT COUNT(*) FROM fact_house_transactions').fetchone(); \
@@ -285,14 +285,14 @@ dwh-stats:
 # DWH CLI起動
 dwh-cli:
 	@echo "🗄️ DuckDB CLIを起動中..."
-	@if [ -f "src/ml/data/dwh/house_price_dwh.duckdb" ]; then \
+	@if [ -f "src/ml/data/dwh/data/house_price_dwh.duckdb" ]; then \
 		echo "📝 利用可能なコマンド:"; \
 		echo "  .tables                    # テーブル一覧表示"; \
 		echo "  .schema                    # スキーマ表示"; \
 		echo "  SELECT * FROM v_summary_statistics;  # サマリー統計"; \
 		echo "  .quit                      # 終了"; \
 		echo ""; \
-		duckdb src/ml/data/dwh/house_price_dwh.duckdb; \
+		duckdb src/ml/data/dwh/data/house_price_dwh.duckdb; \
 	else \
 		echo "❌ DWHデータベースが見つかりません。先に 'make dwh' を実行してください"; \
 		exit 1; \
@@ -301,8 +301,8 @@ dwh-cli:
 # DWHテーブル一覧表示
 dwh-tables:
 	@echo "📋 DWHテーブル一覧表示中..."
-	@if [ -f "src/ml/data/dwh/house_price_dwh.duckdb" ]; then \
-		duckdb src/ml/data/dwh/house_price_dwh.duckdb ".tables"; \
+	@if [ -f "src/ml/data/dwh/data/house_price_dwh.duckdb" ]; then \
+		duckdb src/ml/data/dwh/data/house_price_dwh.duckdb ".tables"; \
 	else \
 		echo "❌ DWHデータベースが見つかりません。先に 'make dwh' を実行してください"; \
 		exit 1; \
@@ -311,8 +311,8 @@ dwh-tables:
 # DWHサマリー統計表示
 dwh-summary:
 	@echo "📊 DWHサマリー統計表示中..."
-	@if [ -f "src/ml/data/dwh/house_price_dwh.duckdb" ]; then \
-		duckdb src/ml/data/dwh/house_price_dwh.duckdb "SELECT * FROM v_summary_statistics;"; \
+	@if [ -f "src/ml/data/dwh/data/house_price_dwh.duckdb" ]; then \
+		duckdb src/ml/data/dwh/data/house_price_dwh.duckdb "SELECT * FROM v_summary_statistics;"; \
 	else \
 		echo "❌ DWHデータベースが見つかりません。先に 'make dwh' を実行してください"; \
 		exit 1; \
@@ -321,8 +321,8 @@ dwh-summary:
 # DWH地域別分析表示
 dwh-location:
 	@echo "📍 DWH地域別分析表示中..."
-	@if [ -f "src/ml/data/dwh/house_price_dwh.duckdb" ]; then \
-		duckdb src/ml/data/dwh/house_price_dwh.duckdb "SELECT * FROM v_location_analytics ORDER BY avg_price DESC;"; \
+	@if [ -f "src/ml/data/dwh/data/house_price_dwh.duckdb" ]; then \
+		duckdb src/ml/data/dwh/data/house_price_dwh.duckdb "SELECT * FROM v_location_analytics ORDER BY avg_price DESC;"; \
 	else \
 		echo "❌ DWHデータベースが見つかりません。先に 'make dwh' を実行してください"; \
 		exit 1; \
@@ -331,8 +331,8 @@ dwh-location:
 # DWH状態別分析表示
 dwh-condition:
 	@echo "🏠 DWH状態別分析表示中..."
-	@if [ -f "src/ml/data/dwh/house_price_dwh.duckdb" ]; then \
-		duckdb src/ml/data/dwh/house_price_dwh.duckdb "SELECT * FROM v_condition_analytics ORDER BY avg_price DESC;"; \
+	@if [ -f "src/ml/data/dwh/data/house_price_dwh.duckdb" ]; then \
+		duckdb src/ml/data/dwh/data/house_price_dwh.duckdb "SELECT * FROM v_condition_analytics ORDER BY avg_price DESC;"; \
 	else \
 		echo "❌ DWHデータベースが見つかりません。先に 'make dwh' を実行してください"; \
 		exit 1; \
@@ -341,8 +341,8 @@ dwh-condition:
 # DWH価格帯別分析表示
 dwh-price-range:
 	@echo "💰 DWH価格帯別分析表示中..."
-	@if [ -f "src/ml/data/dwh/house_price_dwh.duckdb" ]; then \
-		duckdb src/ml/data/dwh/house_price_dwh.duckdb "SELECT CASE WHEN price < 300000 THEN 'Under $300k' WHEN price < 500000 THEN '$300k-$500k' WHEN price < 800000 THEN '$500k-$800k' ELSE 'Over $800k' END as price_range, COUNT(*) as house_count, AVG(price) as avg_price FROM fact_house_transactions GROUP BY price_range ORDER BY MIN(price);"; \
+	@if [ -f "src/ml/data/dwh/data/house_price_dwh.duckdb" ]; then \
+		duckdb src/ml/data/dwh/data/house_price_dwh.duckdb "SELECT CASE WHEN price < 300000 THEN 'Under $300k' WHEN price < 500000 THEN '$300k-$500k' WHEN price < 800000 THEN '$500k-$800k' ELSE 'Over $800k' END as price_range, COUNT(*) as house_count, AVG(price) as avg_price FROM fact_house_transactions GROUP BY price_range ORDER BY MIN(price);"; \
 	else \
 		echo "❌ DWHデータベースが見つかりません。先に 'make dwh' を実行してください"; \
 		exit 1; \
@@ -351,8 +351,8 @@ dwh-price-range:
 # DWH築年数別分析表示
 dwh-year-built:
 	@echo "🏗️ DWH築年数別分析表示中..."
-	@if [ -f "src/ml/data/dwh/house_price_dwh.duckdb" ]; then \
-		duckdb src/ml/data/dwh/house_price_dwh.duckdb "SELECT y.decade, AVG(h.price) as avg_price, COUNT(*) as house_count FROM fact_house_transactions h JOIN dim_years y ON h.year_built_id = y.year_id GROUP BY y.decade ORDER BY y.decade;"; \
+	@if [ -f "src/ml/data/dwh/data/house_price_dwh.duckdb" ]; then \
+		duckdb src/ml/data/dwh/data/house_price_dwh.duckdb "SELECT y.decade, AVG(h.price) as avg_price, COUNT(*) as house_count FROM fact_house_transactions h JOIN dim_years y ON h.year_built_id = y.year_id GROUP BY y.decade ORDER BY y.decade;"; \
 	else \
 		echo "❌ DWHデータベースが見つかりません。先に 'make dwh' を実行してください"; \
 		exit 1; \
@@ -378,7 +378,7 @@ train-ensemble:
 	@if [ -d ".venv" ]; then \
 		.venv/bin/python src/ml/models/train_ensemble.py \
 			--config src/configs/ensemble_config.yaml \
-			--duckdb-path src/ml/data/dwh/house_price_dwh.duckdb \
+			--duckdb-path src/ml/data/dwh/data/house_price_dwh.duckdb \
 			--models-dir src/ml/models \
 			--view-name v_house_analytics; \
 	else \
@@ -393,7 +393,7 @@ train-ensemble-voting:
 	@if [ -d ".venv" ]; then \
 		.venv/bin/python src/ml/models/train_ensemble.py \
 			--config src/configs/ensemble_config.yaml \
-			--duckdb-path src/ml/data/dwh/house_price_dwh.duckdb \
+			--duckdb-path src/ml/data/dwh/data/house_price_dwh.duckdb \
 			--models-dir src/ml/models \
 			--view-name v_house_analytics; \
 	else \
@@ -408,7 +408,7 @@ train-ensemble-stacking:
 	@if [ -d ".venv" ]; then \
 		.venv/bin/python src/ml/models/train_ensemble.py \
 			--config src/configs/ensemble_config.yaml \
-			--duckdb-path src/ml/data/dwh/house_price_dwh.duckdb \
+			--duckdb-path src/ml/data/dwh/data/house_price_dwh.duckdb \
 			--models-dir src/ml/models \
 			--view-name v_house_analytics; \
 	else \

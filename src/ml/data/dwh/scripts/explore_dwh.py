@@ -13,7 +13,7 @@ import pandas as pd
 
 # Add src to path for imports
 script_path = Path(__file__).resolve()
-src_path = script_path.parents[4]  # Go up to src directory
+src_path = script_path.parents[5]  # Go up to src directory
 if str(src_path) not in sys.path:
     sys.path.insert(0, str(src_path))
 
@@ -144,7 +144,7 @@ def explore_dwh(database_path: str):
 
 def main():
     """メイン関数"""
-    database_path = "src/ml/data/dwh/house_price_dwh.duckdb"
+    database_path = "src/ml/data/dwh/data/house_price_dwh.duckdb"
 
     if not os.path.exists(database_path):
         print(f"❌ エラー: データベースファイルが見つかりません: {database_path}")

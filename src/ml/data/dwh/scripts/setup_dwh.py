@@ -17,9 +17,9 @@ print(f"Script location: {Path(__file__).resolve()}")
 print(f"Script parents: {list(Path(__file__).resolve().parents)}")
 
 # srcディレクトリの絶対パスをsys.pathに追加
-# setup_dwh.py -> dwh -> data -> ml -> src -> fullstack-mlops
-# つまり、parents[4]でfullstack-mlopsディレクトリを取得
-src_path = Path(__file__).resolve().parents[4] / "src"
+# setup_dwh.py -> scripts -> dwh -> data -> ml -> src -> fullstack-mlops
+# つまり、parents[5]でfullstack-mlopsディレクトリを取得
+src_path = Path(__file__).resolve().parents[5] / "src"
 print(f"Adding to sys.path: {src_path}")
 print(f"src_path exists: {src_path.exists()}")
 
@@ -35,7 +35,7 @@ except ImportError as e:
     print(f"ml module import error: {e}")
 
 try:
-    from ml.data.dwh import (
+    from ml.data.dwh.core import (
         DWHManager,
         create_schema,
         drop_schema,
@@ -44,14 +44,14 @@ try:
         validate_ingestion,
     )
 
-    print("Successfully imported ml.data.dwh modules")
+    print("Successfully imported ml.data.dwh.core modules")
 except ImportError as e:
-    print(f"ml.data.dwh import error: {e}")
+    print(f"ml.data.dwh.core import error: {e}")
     # 代替手段として相対インポートを試す
     try:
-        from .database import DWHManager
-        from .ingestion import ingest_house_data, validate_ingestion
-        from .schema import create_schema, drop_schema, get_schema_info
+        from ..core.database import DWHManager
+        from ..core.ingestion import ingest_house_data, validate_ingestion
+        from ..core.schema import create_schema, drop_schema, get_schema_info
 
         print("Successfully imported using relative imports")
     except ImportError as e2:
