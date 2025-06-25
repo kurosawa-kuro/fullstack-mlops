@@ -7,6 +7,7 @@ including table creation scripts and schema management functions.
 
 import logging
 from typing import Optional
+
 from .database import DWHManager
 
 logger = logging.getLogger(__name__)
@@ -154,21 +155,21 @@ ORDER BY condition_score DESC;
 def create_schema(dwh_manager: Optional[DWHManager] = None) -> None:
     """
     Create the complete data warehouse schema
-    
+
     Args:
         dwh_manager: Optional DWHManager instance. If None, creates a new one.
     """
     if dwh_manager is None:
         dwh_manager = DWHManager()
-    
+
     try:
         logger.info("Creating data warehouse schema...")
         dwh_manager.execute_script(HOUSE_PRICE_SCHEMA)
         logger.info("Data warehouse schema created successfully")
-        
+
         # Insert dimension data
         _insert_dimension_data(dwh_manager)
-        
+
     except Exception as e:
         logger.error(f"Failed to create schema: {e}")
         raise
@@ -177,44 +178,44 @@ def create_schema(dwh_manager: Optional[DWHManager] = None) -> None:
 def drop_schema(dwh_manager: Optional[DWHManager] = None) -> None:
     """
     Drop all tables in the data warehouse
-    
+
     Args:
         dwh_manager: Optional DWHManager instance. If None, creates a new one.
     """
     if dwh_manager is None:
         dwh_manager = DWHManager()
-    
+
     try:
         logger.info("Dropping data warehouse schema...")
-        
+
         # Drop views first
         views = [
             "v_house_analytics",
-            "v_summary_statistics", 
+            "v_summary_statistics",
             "v_location_analytics",
-            "v_condition_analytics"
+            "v_condition_analytics",
         ]
-        
+
         for view in views:
             try:
                 dwh_manager.execute_query(f"DROP VIEW IF EXISTS {view}")
             except Exception as e:
                 logger.warning(f"Could not drop view {view}: {e}")
-        
+
         # Drop tables
         tables = [
             "fact_house_transactions",
             "raw_house_data",
             "dim_locations",
-            "dim_conditions", 
-            "dim_years"
+            "dim_conditions",
+            "dim_years",
         ]
-        
+
         for table in tables:
             dwh_manager.drop_table(table)
-            
+
         logger.info("Data warehouse schema dropped successfully")
-        
+
     except Exception as e:
         logger.error(f"Failed to drop schema: {e}")
         raise
@@ -223,13 +224,13 @@ def drop_schema(dwh_manager: Optional[DWHManager] = None) -> None:
 def _insert_dimension_data(dwh_manager: DWHManager) -> None:
     """
     Insert initial dimension data
-    
+
     Args:
         dwh_manager: DWHManager instance
     """
     try:
         logger.info("Inserting dimension data...")
-        
+
         # Insert locations
         locations_data = """
         INSERT INTO dim_locations (location_id, location_name, location_type) VALUES
@@ -244,7 +245,7 @@ def _insert_dimension_data(dwh_manager: DWHManager) -> None:
         location_type = EXCLUDED.location_type;
         """
         dwh_manager.execute_script(locations_data)
-        
+
         # Insert conditions
         conditions_data = """
         INSERT INTO dim_conditions (condition_id, condition_name, condition_score) VALUES
@@ -257,27 +258,30 @@ def _insert_dimension_data(dwh_manager: DWHManager) -> None:
         condition_score = EXCLUDED.condition_score;
         """
         dwh_manager.execute_script(conditions_data)
-        
+
         # Insert years (1940-2020)
         years_data = """
         INSERT INTO dim_years (year_id, year_value, decade, century) VALUES
         """
-        
+
         for i, year in enumerate(range(1940, 2021)):
             decade = f"{year//10*10}s"
             century = "20th" if year < 2000 else "21st"
             years_data += f"({i+1}, {year}, '{decade}', '{century}'),"
-        
-        years_data = years_data.rstrip(',') + """
+
+        years_data = (
+            years_data.rstrip(",")
+            + """
         ON CONFLICT (year_id) DO UPDATE SET
         year_value = EXCLUDED.year_value,
         decade = EXCLUDED.decade,
         century = EXCLUDED.century;
         """
+        )
         dwh_manager.execute_script(years_data)
-        
+
         logger.info("Dimension data inserted successfully")
-        
+
     except Exception as e:
         logger.error(f"Failed to insert dimension data: {e}")
         raise
@@ -286,40 +290,35 @@ def _insert_dimension_data(dwh_manager: DWHManager) -> None:
 def get_schema_info(dwh_manager: Optional[DWHManager] = None) -> dict:
     """
     Get information about the current schema
-    
+
     Args:
         dwh_manager: Optional DWHManager instance. If None, creates a new one.
-        
+
     Returns:
         Dictionary with schema information
     """
     if dwh_manager is None:
         dwh_manager = DWHManager()
-    
+
     try:
         tables = dwh_manager.list_tables()
-        schema_info = {
-            "tables": {},
-            "views": [],
-            "total_tables": 0,
-            "total_views": 0
-        }
-        
+        schema_info = {"tables": {}, "views": [], "total_tables": 0, "total_views": 0}
+
         for table in tables:
-            if table.startswith('v_'):
+            if table.startswith("v_"):
                 schema_info["views"].append(table)
                 schema_info["total_views"] += 1
             else:
                 table_info = dwh_manager.get_table_info(table)
                 row_count = dwh_manager.get_table_count(table)
                 schema_info["tables"][table] = {
-                    "columns": table_info.to_dict('records'),
-                    "row_count": row_count
+                    "columns": table_info.to_dict("records"),
+                    "row_count": row_count,
                 }
                 schema_info["total_tables"] += 1
-        
+
         return schema_info
-        
+
     except Exception as e:
         logger.error(f"Failed to get schema info: {e}")
-        raise 
+        raise
