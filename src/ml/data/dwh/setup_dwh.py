@@ -35,9 +35,14 @@ except ImportError as e:
     print(f"ml module import error: {e}")
 
 try:
-    from ml.data.dwh import (DWHManager, create_schema, drop_schema,
-                             get_schema_info, ingest_house_data,
-                             validate_ingestion)
+    from ml.data.dwh import (
+        DWHManager,
+        create_schema,
+        drop_schema,
+        get_schema_info,
+        ingest_house_data,
+        validate_ingestion,
+    )
 
     print("Successfully imported ml.data.dwh modules")
 except ImportError as e:
