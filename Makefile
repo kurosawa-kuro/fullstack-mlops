@@ -1,7 +1,7 @@
 # ML Model CI/CD Makefile
 # 開発者体験向上のための便利コマンド集
 
-.PHONY: help install test lint format clean train train-force pipeline pipeline-quick release setup-dev check-model status venv dwh dwh-explore dwh-backup dwh-stats dwh-cli dwh-tables dwh-summary dwh-location dwh-condition dwh-price-range dwh-year-built dwh-unlock train-ensemble train-ensemble-voting train-ensemble-stacking check-ensemble
+.PHONY: help install test lint format clean train train-force pipeline pipeline-quick release setup-dev check-model status venv dwh dwh-explore dwh-backup dwh-stats dwh-cli dwh-tables dwh-summary dwh-location dwh-condition dwh-price-range dwh-year-built dwh-unlock train-ensemble train-ensemble-voting train-ensemble-stacking check-ensemble ingest dbt all
 
 # デフォルトターゲット
 help:
@@ -437,4 +437,41 @@ check-ensemble:
 		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
 		exit 1; \
 	fi
-	@echo "✅ アンサンブルモデル性能確認完了" 
+	@echo "✅ アンサンブルモデル性能確認完了"
+
+# Bronze層データ取り込み
+ingest:
+	@echo "🗄️ DWH構築とデータインジェスション中..."
+	@if [ -d ".venv" ]; then \
+		.venv/bin/python src/ml/data/dwh/scripts/setup_dwh.py --csv-file src/ml/data/raw/house_data.csv; \
+	else \
+		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
+		exit 1; \
+	fi
+	@echo "✅ DWH構築完了"
+
+# dbtでSilver/Gold層まで作成
+# goldまで一気に作る場合は --select gold
+# テストも同時に実行
+dbt:
+	@echo "�� dbtでSilver/Gold層まで作成中..."
+	@cd src/ml/data/dwh/house_price_dbt && dbt run --select gold && dbt test
+
+docs:
+	@echo "📄 dbtドキュメント生成中..."
+	@cd src/ml/data/dwh/house_price_dbt && dbt docs generate && dbt docs serve
+
+# 学習スクリプト実行
+train:
+	@echo "🔧 学習スクリプト実行中..."
+	@if [ -d ".venv" ]; then \
+		.venv/bin/python src/ml/data/dwh/house_price_dbt/train.py; \
+	else \
+		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
+		exit 1; \
+	fi
+	@echo "✅ 学習スクリプト実行完了"
+
+# 一括実行
+all: ingest dbt train
+	@echo "🚀 一括実行完了" 
