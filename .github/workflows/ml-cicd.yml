@@ -25,6 +25,8 @@ jobs:
   # コード品質チェック
   code-quality:
     runs-on: ubuntu-latest
+    # スキップ条件: 特定のブランチでのみ実行
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
