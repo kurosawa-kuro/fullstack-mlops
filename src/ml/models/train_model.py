@@ -136,139 +136,56 @@ def clean_data(df, target_variable='price'):
 
 
 # -----------------------------
-# Preprocess data for ML
+# Preprocess data for ML (engineer.py互換)
 # -----------------------------
 def create_preprocessor():
-    """Create a preprocessing pipeline similar to non-DuckDB version."""
-    logger.info("Creating advanced preprocessor pipeline")
-    
-    # Define feature groups
-    categorical_features = ['location_name', 'location_type', 'condition_name', 'decade', 'century', 'price_category']
+    """engineer.py/preprocessor.pklと同じ前処理パイプライン"""
+    logger.info("Creating preprocessor pipeline (engineer.py互換)")
+    categorical_features = ["location", "condition"]
     numerical_features = [
-        'sqft', 'bedrooms', 'bathrooms', 'house_age', 'bed_bath_ratio', 
-        'condition_score', 'year_value', 'log_sqft', 'house_age_squared', 
-        'total_rooms', 'sqft_per_bedroom', 'house_age_cubed', 'sqrt_sqft',
-        'bedrooms_bathrooms_interaction', 'age_sqft_interaction', 
-        'condition_sqft_interaction', 'location_price_level'
+        "sqft",
+        "bedrooms",
+        "bathrooms",
+        "house_age",
+        "price_per_sqft",
+        "bed_bath_ratio"
     ]
-    
-    # Preprocessing for numerical features
     numerical_transformer = Pipeline(steps=[
-        ('imputer', SimpleImputer(strategy='mean')),
-        ('scaler', StandardScaler())
+        ("imputer", SimpleImputer(strategy="mean"))
     ])
-    
-    # Preprocessing for categorical features
     categorical_transformer = Pipeline(steps=[
-        ('onehot', OneHotEncoder(handle_unknown='ignore', sparse_output=False))
+        ("onehot", OneHotEncoder(handle_unknown="ignore", sparse_output=False))
     ])
-    
-    # Combine preprocessors in a column transformer
     preprocessor = ColumnTransformer(
         transformers=[
-            ('num', numerical_transformer, numerical_features),
-            ('cat', categorical_transformer, categorical_features),
-        ],
-        remainder='drop'
+            ("num", numerical_transformer, numerical_features),
+            ("cat", categorical_transformer, categorical_features),
+        ]
     )
-    
     return preprocessor
 
 
 def preprocess_data(data, target_variable):
     """
-    データを機械学習用に前処理する（高度な前処理版）
+    engineer.py/preprocessor.pklと同じ特徴量のみを使う
     """
-    logger.info("Preprocessing data for machine learning with advanced pipeline")
-    
-    # ターゲット変数を除外した特徴量を抽出
-    X = data.drop(columns=[target_variable])
+    logger.info("Preprocessing data for machine learning (engineer.py互換)")
+    # 必要なカラムのみ抽出
+    X = pd.DataFrame()
+    X["sqft"] = data["sqft"]
+    X["bedrooms"] = data["bedrooms"]
+    X["bathrooms"] = data["bathrooms"]
+    X["house_age"] = data["house_age"]
+    X["price_per_sqft"] = data["price"] / data["sqft"]
+    X["bed_bath_ratio"] = data["bedrooms"] / data["bathrooms"]
+    X["bed_bath_ratio"] = X["bed_bath_ratio"].replace([np.inf, -np.inf], np.nan).fillna(0)
+    # location, condition名をengineer.py互換に
+    X["location"] = data["location_name"]
+    X["condition"] = data["condition_name"]
     y = data[target_variable]
-    
-    # 不要な特徴量を除外（データリークや予測に不要な特徴量）
-    columns_to_exclude = [
-        'transaction_id',      # 取引ID（予測に不要）
-        'transaction_date',    # 取引日（予測に不要）
-        'price_per_sqft'       # 価格/平方フィート（データリーク）
-    ]
-    
-    for col in columns_to_exclude:
-        if col in X.columns:
-            X = X.drop(columns=[col])
-            logger.info(f"Excluded feature: {col}")
-    
-    # 追加の特徴量エンジニアリング
-    logger.info("Adding engineered features...")
-    
-    # 面積の対数変換（価格との関係を改善）
-    if 'sqft' in X.columns:
-        X['log_sqft'] = np.log(X['sqft'])
-        logger.info("Added feature: log_sqft")
-    
-    # 築年数の2乗項（非線形関係を捉える）
-    if 'house_age' in X.columns:
-        X['house_age_squared'] = X['house_age'] ** 2
-        logger.info("Added feature: house_age_squared")
-    
-    # 寝室とバスルームの総数
-    if 'bedrooms' in X.columns and 'bathrooms' in X.columns:
-        X['total_rooms'] = X['bedrooms'] + X['bathrooms']
-        logger.info("Added feature: total_rooms")
-    
-    # 面積あたりの寝室数
-    if 'sqft' in X.columns and 'bedrooms' in X.columns:
-        X['sqft_per_bedroom'] = X['sqft'] / (X['bedrooms'] + 1)  # +1 to avoid division by zero
-        logger.info("Added feature: sqft_per_bedroom")
-    
-    # より高度な特徴量エンジニアリング
-    logger.info("Adding advanced engineered features...")
-    
-    # 築年数の3乗項（より複雑な非線形関係）
-    if 'house_age' in X.columns:
-        X['house_age_cubed'] = X['house_age'] ** 3
-        logger.info("Added feature: house_age_cubed")
-    
-    # 面積の平方根（価格との関係を改善）
-    if 'sqft' in X.columns:
-        X['sqrt_sqft'] = np.sqrt(X['sqft'])
-        logger.info("Added feature: sqrt_sqft")
-    
-    # 寝室とバスルームの積（相互作用）
-    if 'bedrooms' in X.columns and 'bathrooms' in X.columns:
-        X['bedrooms_bathrooms_interaction'] = X['bedrooms'] * X['bathrooms']
-        logger.info("Added feature: bedrooms_bathrooms_interaction")
-    
-    # 築年数と面積の相互作用
-    if 'house_age' in X.columns and 'sqft' in X.columns:
-        X['age_sqft_interaction'] = X['house_age'] * X['sqft']
-        logger.info("Added feature: age_sqft_interaction")
-    
-    # 条件スコアと面積の相互作用
-    if 'condition_score' in X.columns and 'sqft' in X.columns:
-        X['condition_sqft_interaction'] = X['condition_score'] * X['sqft']
-        logger.info("Added feature: condition_sqft_interaction")
-    
-    # 価格帯のカテゴリ化（高価格・中価格・低価格）
-    if target_variable in data.columns:
-        price_quartiles = data[target_variable].quantile([0.33, 0.67])
-        X['price_category'] = pd.cut(data[target_variable], 
-                                    bins=[0, price_quartiles[0.33], price_quartiles[0.67], float('inf')], 
-                                    labels=[0, 1, 2])
-        logger.info("Added feature: price_category")
-    
-    # 地域の価格レベル（地域別平均価格の正規化）
-    if 'location_name' in X.columns and target_variable in data.columns:
-        location_avg_price = data.groupby('location_name')[target_variable].mean()
-        X['location_price_level'] = X['location_name'].map(location_avg_price)
-        logger.info("Added feature: location_price_level")
-    
-    # 高度な前処理パイプラインを作成して適用
     preprocessor = create_preprocessor()
     X_transformed = preprocessor.fit_transform(X)
-    
     logger.info(f"Final feature matrix shape: {X_transformed.shape}")
-    logger.info(f"Preprocessor created with {len(preprocessor.transformers)} transformers")
-    
     return X_transformed, y, preprocessor
 
 
