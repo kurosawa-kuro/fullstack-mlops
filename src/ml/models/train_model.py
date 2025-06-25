@@ -32,6 +32,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)  # ロガーインスタンスを作成
 
 
+
 # -----------------------------
 # Argument parser
 # -----------------------------
