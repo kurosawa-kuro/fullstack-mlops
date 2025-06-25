@@ -1,4 +1,4 @@
-name: ML Model CI/CD
+name: ML Model CI/CD (DuckDB対応)
 
 on:
   push:
@@ -7,6 +7,7 @@ on:
       - 'src/**'
       - 'src/configs/**'
       - 'src/ml/data/**'
+      - 'src/ml/dwh/**'
       - 'src/tests/**'
       - 'requirements.txt'
       - '.github/workflows/ml-cicd.yml'
@@ -16,6 +17,7 @@ on:
       - 'src/**'
       - 'src/configs/**'
       - 'src/ml/data/**'
+      - 'src/ml/dwh/**'
       - 'src/tests/**'
       - 'requirements.txt'
       - '.github/workflows/ml-cicd.yml'
@@ -70,7 +72,7 @@ jobs:
           bandit -r src/ -f json -o bandit-report.json || true
           bandit -r src/ --severity-level high
 
-  # テスト実行（モデル訓練前の基本テスト）
+  # テスト実行（DuckDB DWH構築前の基本テスト）
   test:
     runs-on: ubuntu-latest
     needs: code-quality
@@ -101,6 +103,7 @@ jobs:
         run: |
           mkdir -p src/ml/data/raw
           mkdir -p src/ml/data/processed
+          mkdir -p src/ml/data/dwh
           mkdir -p src/ml/models/trained
 
       - name: Create sample data for testing
@@ -127,22 +130,26 @@ jobs:
           print('✅ サンプルデータを作成しました')
           "
 
-      - name: Run data processing for testing
+      - name: Build DuckDB DWH for testing
         run: |
-          # データ処理を実行
-          python src/ml/data/run_processing.py \
-            --input src/ml/data/raw/house_data.csv \
-            --output src/ml/data/processed/cleaned_house_data.csv
+          # DuckDB DWHを構築
+          python src/ml/data/dwh/setup_dwh.py \
+            --csv-file src/ml/data/raw/house_data.csv \
+            --db-path src/ml/data/dwh/house_price_dwh.duckdb \
+            --force-schema
           
-          # 特徴量エンジニアリングを実行
-          python src/ml/features/engineer.py \
-            --input src/ml/data/processed/cleaned_house_data.csv \
-            --output src/ml/data/processed/featured_house_data.csv \
-            --preprocessor src/ml/models/trained/preprocessor.pkl
+          # DWHの状態確認
+          python src/ml/data/dwh/setup_dwh.py \
+            --db-path src/ml/data/dwh/house_price_dwh.duckdb \
+            --check-schema
 
-      - name: Run model training for testing
+      - name: Run DuckDB-based model training for testing
         run: |
-          python src/ml/pipeline/train_pipeline.py
+          python src/ml/models/train_model.py \
+            --config src/configs/model_config.yaml \
+            --duckdb-path src/ml/data/dwh/house_price_dwh.duckdb \
+            --models-dir src/ml/models \
+            --view-name v_house_analytics
 
       - name: Run basic tests
         run: |
@@ -155,7 +162,7 @@ jobs:
           flags: unittests
           name: codecov-umbrella
 
-  # モデル訓練
+  # モデル訓練（DuckDB DWH使用）
   train-model:
     runs-on: ubuntu-latest
     needs: test
@@ -186,6 +193,7 @@ jobs:
         run: |
           mkdir -p src/ml/data/raw
           mkdir -p src/ml/data/processed
+          mkdir -p src/ml/data/dwh
           mkdir -p src/ml/models/trained
 
       - name: Create sample data
@@ -212,9 +220,26 @@ jobs:
           print('✅ サンプルデータを作成しました')
           "
 
-      - name: Run ML pipeline
+      - name: Build DuckDB DWH
         run: |
-          python src/ml/pipeline/train_pipeline.py
+          # DuckDB DWHを構築
+          python src/ml/data/dwh/setup_dwh.py \
+            --csv-file src/ml/data/raw/house_data.csv \
+            --db-path src/ml/data/dwh/house_price_dwh.duckdb \
+            --force-schema
+          
+          # DWHの状態確認
+          python src/ml/data/dwh/setup_dwh.py \
+            --db-path src/ml/data/dwh/house_price_dwh.duckdb \
+            --info-only
+
+      - name: Run DuckDB-based ML pipeline
+        run: |
+          python src/ml/models/train_model.py \
+            --config src/configs/model_config.yaml \
+            --duckdb-path src/ml/data/dwh/house_price_dwh.duckdb \
+            --models-dir src/ml/models \
+            --view-name v_house_analytics
 
       - name: Verify model artifacts
         run: |
@@ -235,14 +260,14 @@ jobs:
             src/ml/models/trained/preprocessor.pkl
           retention-days: 30
 
-      - name: Upload processed data
+      - name: Upload DuckDB database
         uses: actions/upload-artifact@v4
         with:
-          name: processed-data
-          path: src/ml/data/processed/
+          name: duckdb-dwh
+          path: src/ml/data/dwh/house_price_dwh.duckdb
           retention-days: 30
 
-  # モデル性能テスト
+  # モデル性能テスト（DuckDB対応）
   model-performance:
     runs-on: ubuntu-latest
     needs: train-model
@@ -267,11 +292,11 @@ jobs:
           name: trained-models
           path: src/ml/models/trained/
 
-      - name: Download processed data
+      - name: Download DuckDB database
         uses: actions/download-artifact@v4
         with:
-          name: processed-data
-          path: src/ml/data/processed/
+          name: duckdb-dwh
+          path: src/ml/data/dwh/
 
       - name: Run model performance tests
         run: |
@@ -279,11 +304,48 @@ jobs:
           python -m pytest src/tests/test_ml_pipeline.py::TestModelPipeline::test_model_can_load -v
           python -m pytest src/tests/test_ml_pipeline.py::TestModelPipeline::test_model_can_predict -v
 
+      - name: Test DuckDB integration
+        run: |
+          python -c "
+          import duckdb
+          import joblib
+          import pandas as pd
+          
+          # DuckDBからデータを読み込み
+          conn = duckdb.connect('src/ml/data/dwh/house_price_dwh.duckdb')
+          data = conn.execute('SELECT * FROM v_house_analytics LIMIT 5').fetchdf()
+          conn.close()
+          
+          # モデルで予測
+          model = joblib.load('src/ml/models/trained/house_price_prediction.pkl')
+          preprocessor = joblib.load('src/ml/models/trained/preprocessor.pkl')
+          
+          # サンプルデータで予測
+          sample = data.iloc[0:1]
+          X = pd.DataFrame({
+              'sqft': sample['sqft'],
+              'bedrooms': sample['bedrooms'],
+              'bathrooms': sample['bathrooms'],
+              'house_age': sample['house_age'],
+              'price_per_sqft': sample['price'] / sample['sqft'],
+              'bed_bath_ratio': sample['bedrooms'] / sample['bathrooms'],
+              'location': sample['location_name'],
+              'condition': sample['condition_name']
+          })
+          
+          X_transformed = preprocessor.transform(X)
+          prediction = model.predict(X_transformed)
+          
+          print(f'✅ DuckDB統合テスト成功')
+          print(f'📊 サンプル予測結果: ${prediction[0]:,.2f}')
+          "
+
       - name: Model performance summary
         run: |
-          echo "🎯 モデル性能テスト完了"
+          echo "🎯 モデル性能テスト完了（DuckDB対応）"
           echo "📊 モデルファイルサイズ: $(ls -lh src/ml/models/trained/house_price_prediction.pkl | awk '{print $5}')"
           echo "📊 前処理器ファイルサイズ: $(ls -lh src/ml/models/trained/preprocessor.pkl | awk '{print $5}')"
+          echo "📊 DuckDBデータベースサイズ: $(ls -lh src/ml/data/dwh/house_price_dwh.duckdb | awk '{print $5}')"
 
   # GitHub Release作成（タグプッシュ時）
   create-release:
@@ -300,11 +362,11 @@ jobs:
           name: trained-models
           path: src/ml/models/trained/
 
-      - name: Download processed data
+      - name: Download DuckDB database
         uses: actions/download-artifact@v4
         with:
-          name: processed-data
-          path: src/ml/data/processed/
+          name: duckdb-dwh
+          path: src/ml/data/dwh/
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -312,34 +374,42 @@ jobs:
           files: |
             src/ml/models/trained/house_price_prediction.pkl
             src/ml/models/trained/preprocessor.pkl
-            src/ml/data/processed/featured_house_data.csv
+            src/ml/data/dwh/house_price_dwh.duckdb
           body: |
-            ## 🏠 House Price Prediction Model Release
+            ## 🏠 House Price Prediction Model Release (DuckDB対応)
             
             ### 📦 含まれるファイル
             - `house_price_prediction.pkl`: 学習済みモデル
             - `preprocessor.pkl`: 前処理器
-            - `featured_house_data.csv`: 処理済みデータ
+            - `house_price_dwh.duckdb`: DuckDBデータウェアハウス
             
             ### 🚀 使用方法
             ```python
             import joblib
+            import duckdb
             
             # モデルと前処理器を読み込み
             model = joblib.load('house_price_prediction.pkl')
             preprocessor = joblib.load('preprocessor.pkl')
             
+            # DuckDBからデータを読み込み
+            conn = duckdb.connect('house_price_dwh.duckdb')
+            data = conn.execute('SELECT * FROM v_house_analytics').fetchdf()
+            conn.close()
+            
             # 予測実行
-            # (サンプルデータで前処理 → 予測)
+            # (DuckDBデータで前処理 → 予測)
             ```
             
             ### 📊 モデル情報
             - アルゴリズム: Random Forest
-            - 特徴量: sqft, bedrooms, bathrooms, year_built, location, condition
+            - 特徴量: sqft, bedrooms, bathrooms, house_age, price_per_sqft, bed_bath_ratio, location, condition
             - ターゲット: house price
+            - データソース: DuckDB DWH (v_house_analytics view)
             
             ### 🔄 CI/CD
             このリリースは自動CI/CDパイプラインにより生成されました。
+            DuckDBベースのデータウェアハウス構築からモデル訓練まで自動化されています。
           draft: false
           prerelease: false
         env:

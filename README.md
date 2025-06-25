@@ -6,7 +6,7 @@
 - **MLパイプライン**: scikit-learn, XGBoost, アンサンブル（Voting/Stacking）
 - **実験管理**: MLflow
 - **API/フロント**: FastAPI, Streamlit
-- **CI/CD**: GitHub Actions
+- **CI/CD**: GitHub Actions（DuckDB対応）
 - **最高精度**: Stacking Ensemble（MAE: 10,858, R²: 0.9929）
 
 ---
@@ -38,6 +38,7 @@ mlops/fullstack-mlops/
 │   ├── configs/            # モデル設定YAML
 │   ├── ml/
 │   │   ├── data/           # データ処理・DWH
+│   │   │   └── dwh/        # DuckDB DWH関連
 │   │   ├── features/       # 特徴量エンジニアリング
 │   │   ├── models/         # モデル訓練・アンサンブル
 │   │   └── pipeline/       # パイプライン統合
@@ -46,7 +47,8 @@ mlops/fullstack-mlops/
 │   │   └── ui/             # Streamlitフロント
 │   └── tests/              # テスト
 ├── deployment/             # MLflow, K8s等
-└── models/trained/         # 訓練済みモデル
+├── models/trained/         # 訓練済みモデル
+└── .github/workflows/      # CI/CDワークフロー
 ```
 
 ---
@@ -58,7 +60,7 @@ mlops/fullstack-mlops/
 3. **モデル訓練（単体/アンサンブル）**
 4. **MLflowによる実験管理・モデル登録**
 5. **API/フロントエンド公開（FastAPI/Streamlit）**
-6. **CI/CD自動化（GitHub Actions）**
+6. **CI/CD自動化（GitHub Actions - DuckDB対応）**
 
 ---
 
@@ -109,8 +111,9 @@ mlops/fullstack-mlops/
 - FastAPI: `/predict`エンドポイントで推論API
 - Streamlit: Web UIでインタラクティブ予測
 
-### 6. CI/CD自動化
-- GitHub Actionsでテスト・訓練・リリース自動化
+### 6. CI/CD自動化（DuckDB対応）
+- GitHub Actionsでテスト・DWH構築・訓練・リリース自動化
+- DuckDBベースのデータウェアハウス構築からモデル訓練まで一気通貫
 - `Makefile`でローカル開発も効率化
 
 ---
@@ -155,10 +158,57 @@ curl -X POST "http://localhost:8000/predict" \
 
 ---
 
-## 🔄 CI/CDパイプライン
-- GitHub Actionsで自動テスト・訓練・リリース
-- mainブランチpushで全自動実行
-- `.github/workflows/` 配下にワークフロー定義
+## 🔄 CI/CDパイプライン（DuckDB対応）
+
+### ワークフロー概要
+GitHub Actionsで自動テスト・DWH構築・訓練・リリースを実行します。
+
+### 実行トリガー
+- **Push**: main/master/developブランチへのプッシュ
+- **Pull Request**: main/master/developブランチへのPR
+- **手動実行**: workflow_dispatchで手動実行可能
+
+### ジョブ構成
+
+#### 1. コード品質チェック（code-quality）
+- **Black**: コードフォーマットチェック
+- **isort**: インポート順序チェック
+- **flake8**: リンター
+- **mypy**: 型チェック
+- **bandit**: セキュリティチェック
+
+#### 2. テスト実行（test）
+- **DuckDB DWH構築**: サンプルデータでDWHを構築
+- **モデル訓練**: DuckDBベースのモデル訓練
+- **テスト実行**: pytestでテスト実行
+- **カバレッジ**: Codecovにカバレッジレポート送信
+
+#### 3. モデル訓練（train-model）
+- **DuckDB DWH構築**: 本番用DWHを構築
+- **モデル訓練**: DuckDBデータを使用したモデル訓練
+- **アーティファクト保存**: モデル・DWHファイルを保存
+
+#### 4. モデル性能テスト（model-performance）
+- **統合テスト**: DuckDBとモデルの統合テスト
+- **性能確認**: モデルファイルサイズ・DWHサイズ確認
+
+#### 5. リリース作成（create-release）
+- **タグプッシュ時**: 自動でGitHub Release作成
+- **アーティファクト添付**: モデル・DWHファイルをリリースに添付
+
+### DuckDB対応の特徴
+- **データソース**: CSV → DuckDB DWHに変更
+- **モデル訓練**: `train_model.py`でDuckDB直接接続
+- **ビュー活用**: `v_house_analytics`ビューからデータ取得
+- **アーティファクト**: DWHファイルも保存・配布
+
+### ローカル開発
+```bash
+# CI/CDと同じ環境でテスト
+make test
+make dwh
+make train-ensemble
+```
 
 ---
 
@@ -167,6 +217,8 @@ curl -X POST "http://localhost:8000/predict" \
 - **依存関係エラー**: Python3.12対応済み。`requirements.txt`のバージョンを確認
 - **WSL2でのポート問題**: `localhost`でアクセス不可な場合はWSL2のIPアドレスを使用
 - **MLflow/モデルファイルが見つからない**: `make train-ensemble`で再訓練
+- **DuckDB DWHエラー**: `make dwh-force`でDWH再構築
+- **CI/CDエラー**: `.github/workflows/ml-cicd.yml`のログを確認
 - **Docker/CLI/MLflowの詳細FAQ**: README内該当セクション参照
 
 ---
