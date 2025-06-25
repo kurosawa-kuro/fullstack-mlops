@@ -114,7 +114,7 @@ jobs:
       - name: Upload model artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: trained-models-${{ github.ref_name }}
+          name: trained-models-${{ github.sha }}
           path: |
             src/ml/models/trained/house_price_prediction.pkl
             src/ml/models/trained/house_price_prediction_encoders.pkl
@@ -123,7 +123,7 @@ jobs:
       - name: Upload DuckDB database
         uses: actions/upload-artifact@v4
         with:
-          name: duckdb-dwh-${{ github.ref_name }}
+          name: duckdb-dwh-${{ github.sha }}
           path: src/ml/data/dwh/data/house_price_dwh.duckdb
           retention-days: 30
 
@@ -157,13 +157,13 @@ jobs:
       - name: Download model artifacts
         uses: actions/download-artifact@v4
         with:
-          name: trained-models-${{ github.ref_name }}
+          name: trained-models-${{ github.sha }}
           path: src/ml/models/trained/
 
       - name: Download DuckDB database
         uses: actions/download-artifact@v4
         with:
-          name: duckdb-dwh-${{ github.ref_name }}
+          name: duckdb-dwh-${{ github.sha }}
           path: src/ml/data/dwh/data/
 
       - name: Run tests
@@ -198,13 +198,13 @@ jobs:
       - name: Download model artifacts
         uses: actions/download-artifact@v4
         with:
-          name: trained-models-${{ github.ref_name }}
+          name: trained-models-${{ github.sha }}
           path: src/ml/models/trained/
 
       - name: Download DuckDB database
         uses: actions/download-artifact@v4
         with:
-          name: duckdb-dwh-${{ github.ref_name }}
+          name: duckdb-dwh-${{ github.sha }}
           path: src/ml/data/dwh/data/
 
       - name: Run model performance tests
@@ -268,13 +268,13 @@ jobs:
       - name: Download model artifacts
         uses: actions/download-artifact@v4
         with:
-          name: trained-models-${{ github.ref_name }}
+          name: trained-models-${{ github.sha }}
           path: src/ml/models/trained/
 
       - name: Download DuckDB database
         uses: actions/download-artifact@v4
         with:
-          name: duckdb-dwh-${{ github.ref_name }}
+          name: duckdb-dwh-${{ github.sha }}
           path: src/ml/data/dwh/data/
 
       - name: Create Release
