@@ -210,6 +210,7 @@ check-model-duckdb:
 		.venv/bin/python -c "import joblib; import pandas as pd; import numpy as np; \
 		model = joblib.load('src/ml/models/trained/house_price_predictor_duckdb.pkl'); \
 		preprocessor = joblib.load('src/ml/models/trained/house_price_predictor_duckdb_encoders.pkl'); \
+		
 		print('✅ DuckDBモデル読み込み成功'); \
 		sample_data = pd.DataFrame({ \
 			'sqft': [2000], 'bedrooms': [3], 'bathrooms': [2.5], \

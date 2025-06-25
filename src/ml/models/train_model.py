@@ -12,15 +12,15 @@ import sklearn  # scikit-learnライブラリ
 import xgboost as xgb  # XGBoostライブラリ
 import yaml  # YAMLファイル読み込みライブラリ
 from mlflow.tracking import MlflowClient  # MLflowクライアント
+from sklearn.compose import ColumnTransformer  # 列別の変換器を組み合わせるクラス
 from sklearn.ensemble import GradientBoostingRegressor  # アンサンブル学習アルゴリズム
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.impute import SimpleImputer  # 欠損値補完のためのクラス
 from sklearn.linear_model import LinearRegression  # 線形回帰アルゴリズム
 from sklearn.metrics import mean_absolute_error, r2_score  # 評価指標
 from sklearn.model_selection import train_test_split  # データ分割機能
-from sklearn.preprocessing import LabelEncoder  # ラベルエンコーダー
-from sklearn.compose import ColumnTransformer  # 列別の変換器を組み合わせるクラス
-from sklearn.impute import SimpleImputer  # 欠損値補完のためのクラス
 from sklearn.pipeline import Pipeline  # パイプライン構築のためのクラス
+from sklearn.preprocessing import LabelEncoder  # ラベルエンコーダー
 from sklearn.preprocessing import OneHotEncoder, StandardScaler  # 前処理クラス
 
 # -----------------------------
@@ -52,8 +52,10 @@ def parse_args():
         "--mlflow-tracking-uri", type=str, default=None, help="MLflow tracking URI"
     )  # MLflow追跡URIの引数を定義
     parser.add_argument(
-        "--view-name", type=str, default="v_house_analytics", 
-        help="DuckDB view name to use for training data"
+        "--view-name",
+        type=str,
+        default="v_house_analytics",
+        help="DuckDB view name to use for training data",
     )  # 使用するビュー名の引数を定義
     return parser.parse_args()  # コマンドライン引数を解析して返す
 
@@ -66,20 +68,20 @@ def load_data_from_duckdb(duckdb_path, view_name):
     DuckDBからデータを読み込み、機械学習用に前処理する
     """
     logger.info(f"Loading data from DuckDB: {duckdb_path}, view: {view_name}")
-    
+
     # DuckDBに接続
     conn = duckdb.connect(duckdb_path)
-    
+
     try:
         # ビューからデータを取得
         query = f"SELECT * FROM {view_name}"
         data = conn.execute(query).fetchdf()
-        
+
         logger.info(f"Loaded {len(data)} records from {view_name}")
         logger.info(f"Columns: {list(data.columns)}")
-        
+
         return data
-        
+
     finally:
         conn.close()
 
@@ -87,51 +89,57 @@ def load_data_from_duckdb(duckdb_path, view_name):
 # -----------------------------
 # Clean data (same as non-DuckDB version)
 # -----------------------------
-def clean_data(df, target_variable='price'):
+def clean_data(df, target_variable="price"):
     """
     非DuckDB版と同じクリーニング処理を適用
     """
     logger.info("Cleaning dataset (same as non-DuckDB version)")
-    
+
     # Make a copy to avoid modifying the original dataframe
     df_cleaned = df.copy()
-    
+
     # Handle missing values
     for column in df_cleaned.columns:
         missing_count = df_cleaned[column].isnull().sum()
         if missing_count > 0:
             logger.info(f"Found {missing_count} missing values in {column}")
-            
+
             # For numeric columns, fill with median
             if pd.api.types.is_numeric_dtype(df_cleaned[column]):
                 median_value = df_cleaned[column].median()
                 df_cleaned[column] = df_cleaned[column].fillna(median_value)
-                logger.info(f"Filled missing values in {column} with median: {median_value}")
+                logger.info(
+                    f"Filled missing values in {column} with median: {median_value}"
+                )
             # For categorical columns, fill with mode
             else:
                 mode_value = df_cleaned[column].mode()[0]
                 df_cleaned[column] = df_cleaned[column].fillna(mode_value)
-                logger.info(f"Filled missing values in {column} with mode: {mode_value}")
-    
+                logger.info(
+                    f"Filled missing values in {column} with mode: {mode_value}"
+                )
+
     # Handle outliers in price (target variable) - same as non-DuckDB version
     Q1 = df_cleaned[target_variable].quantile(0.25)
     Q3 = df_cleaned[target_variable].quantile(0.75)
     IQR = Q3 - Q1
     lower_bound = Q1 - 1.5 * IQR
     upper_bound = Q3 + 1.5 * IQR
-    
+
     # Filter out extreme outliers
     outliers = df_cleaned[
-        (df_cleaned[target_variable] < lower_bound) | (df_cleaned[target_variable] > upper_bound)
+        (df_cleaned[target_variable] < lower_bound)
+        | (df_cleaned[target_variable] > upper_bound)
     ]
-    
+
     if not outliers.empty:
         logger.info(f"Found {len(outliers)} outliers in {target_variable} column")
         df_cleaned = df_cleaned[
-            (df_cleaned[target_variable] >= lower_bound) & (df_cleaned[target_variable] <= upper_bound)
+            (df_cleaned[target_variable] >= lower_bound)
+            & (df_cleaned[target_variable] <= upper_bound)
         ]
         logger.info(f"Removed outliers. New dataset shape: {df_cleaned.shape}")
-    
+
     return df_cleaned
 
 
@@ -148,14 +156,14 @@ def create_preprocessor():
         "bathrooms",
         "house_age",
         "price_per_sqft",
-        "bed_bath_ratio"
+        "bed_bath_ratio",
     ]
-    numerical_transformer = Pipeline(steps=[
-        ("imputer", SimpleImputer(strategy="mean"))
-    ])
-    categorical_transformer = Pipeline(steps=[
-        ("onehot", OneHotEncoder(handle_unknown="ignore", sparse_output=False))
-    ])
+    numerical_transformer = Pipeline(
+        steps=[("imputer", SimpleImputer(strategy="mean"))]
+    )
+    categorical_transformer = Pipeline(
+        steps=[("onehot", OneHotEncoder(handle_unknown="ignore", sparse_output=False))]
+    )
     preprocessor = ColumnTransformer(
         transformers=[
             ("num", numerical_transformer, numerical_features),
@@ -178,7 +186,9 @@ def preprocess_data(data, target_variable):
     X["house_age"] = data["house_age"]
     X["price_per_sqft"] = data["price"] / data["sqft"]
     X["bed_bath_ratio"] = data["bedrooms"] / data["bathrooms"]
-    X["bed_bath_ratio"] = X["bed_bath_ratio"].replace([np.inf, -np.inf], np.nan).fillna(0)
+    X["bed_bath_ratio"] = (
+        X["bed_bath_ratio"].replace([np.inf, -np.inf], np.nan).fillna(0)
+    )
     # location, condition名をengineer.py互換に
     X["location"] = data["location_name"]
     X["condition"] = data["condition_name"]
@@ -226,13 +236,29 @@ def main(args):
 
     # Preprocess data
     X, y, preprocessor = preprocess_data(cleaned_data, target)  # データを前処理
-    
+
     # 特徴量名リストを取得
-    features_used = list(cleaned_data.drop(columns=[target]).drop(columns=['transaction_id', 'transaction_date', 'price_per_sqft'], errors='ignore').columns)
-    features_used += ['log_sqft', 'house_age_squared', 'total_rooms', 'sqft_per_bedroom', 
-                     'house_age_cubed', 'sqrt_sqft', 'bedrooms_bathrooms_interaction', 
-                     'age_sqft_interaction', 'condition_sqft_interaction', 'price_category', 
-                     'location_price_level']
+    features_used = list(
+        cleaned_data.drop(columns=[target])
+        .drop(
+            columns=["transaction_id", "transaction_date", "price_per_sqft"],
+            errors="ignore",
+        )
+        .columns
+    )
+    features_used += [
+        "log_sqft",
+        "house_age_squared",
+        "total_rooms",
+        "sqft_per_bedroom",
+        "house_age_cubed",
+        "sqrt_sqft",
+        "bedrooms_bathrooms_interaction",
+        "age_sqft_interaction",
+        "condition_sqft_interaction",
+        "price_category",
+        "location_price_level",
+    ]
 
     # データを訓練用とテスト用に分割
     X_train, X_test, y_train, y_test = train_test_split(
@@ -339,16 +365,17 @@ def main(args):
 
         # Save model and label encoders locally
         import os
+
         os.makedirs(f"{args.models_dir}/trained", exist_ok=True)  # ディレクトリを作成
-        
+
         # モデルを保存
         model_save_path = f"{args.models_dir}/trained/{model_name}.pkl"  # 保存パスを構築
         joblib.dump(model, model_save_path)  # モデルをローカルに保存
-        
+
         # ラベルエンコーダーを保存
         encoders_save_path = f"{args.models_dir}/trained/{model_name}_encoders.pkl"
         joblib.dump(preprocessor, encoders_save_path)
-        
+
         logger.info(f"Saved trained model to: {model_save_path}")  # モデル保存完了のログ
         logger.info(f"Saved preprocessor to: {encoders_save_path}")  # 前処理器保存完了のログ
         logger.info(f"Final MAE: {mae:.2f}, R²: {r2:.4f}")  # 最終評価指標のログ
