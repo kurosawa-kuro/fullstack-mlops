@@ -18,7 +18,7 @@ class TestModelPipeline:
         # モデルファイルが存在しない場合はスキップ
         if not os.path.exists(model_path):
             pytest.skip(f"モデルファイルが存在しません: {model_path}")
-        
+
         if not os.path.exists(preprocessor_path):
             pytest.skip(f"前処理ファイルが存在しません: {preprocessor_path}")
 
