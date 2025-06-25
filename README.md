@@ -213,32 +213,35 @@ sudo snap install duckdb
 
 # データベースに接続
 duckdb src/ml/data/dwh/house_price_dwh.duckdb
-
-# 基本的なコマンド
-.tables                    # テーブル一覧表示
-.schema                    # スキーマ表示
-SELECT * FROM v_summary_statistics;  # サマリー統計
-.quit                      # 終了
 ```
 
-#### 3. VSCodeでのGUI参照
-
-1. **VSCode拡張のインストール**:
-   - VSCode Marketplaceで「DuckDB」を検索
-   - DuckDB拡張をインストール
-
-2. **データベースファイルを開く**:
-   ```bash
-   # WSLからVSCodeを起動
-   code .
-   ```
-   - `src/ml/data/dwh/house_price_dwh.duckdb`を右クリック
-   - 「Open With DuckDB」を選択
-
-### 📊 分析クエリ例
-
-#### 価格帯別の住宅数分析
+**基本的なCLIコマンド：**
 ```sql
+-- テーブル一覧表示
+.tables
+
+-- スキーマ表示
+.schema
+
+-- サマリー統計を表示
+SELECT * FROM v_summary_statistics;
+
+-- 地域別分析を表示
+SELECT * FROM v_location_analytics ORDER BY avg_price DESC;
+
+-- 状態別分析を表示
+SELECT * FROM v_condition_analytics ORDER BY avg_price DESC;
+
+-- 最初の5件の住宅データを表示
+SELECT * FROM fact_house_transactions LIMIT 5;
+
+-- 終了
+.quit
+```
+
+**便利な分析クエリ例：**
+```sql
+-- 価格帯別の住宅数分析
 SELECT 
   CASE 
     WHEN price < 300000 THEN 'Under $300k'
@@ -251,10 +254,8 @@ SELECT
 FROM fact_house_transactions
 GROUP BY price_range
 ORDER BY MIN(price);
-```
 
-#### 築年数別の平均価格分析
-```sql
+-- 築年数別の平均価格分析
 SELECT 
   y.decade,
   AVG(h.price) as avg_price,
@@ -264,10 +265,8 @@ FROM fact_house_transactions h
 JOIN dim_years y ON h.year_built_id = y.year_id
 GROUP BY y.decade
 ORDER BY y.decade;
-```
 
-#### 地域・状態別の価格分析
-```sql
+-- 地域・状態別の価格分析
 SELECT 
   l.location_name,
   c.condition_name,
@@ -279,6 +278,34 @@ JOIN dim_locations l ON h.location_id = l.location_id
 JOIN dim_conditions c ON h.condition_id = c.condition_id
 GROUP BY l.location_name, c.condition_name
 ORDER BY avg_price DESC;
+```
+
+**ワンライナーでのクエリ実行：**
+```bash
+# テーブル一覧を表示
+duckdb src/ml/data/dwh/house_price_dwh.duckdb ".tables"
+
+# サマリー統計を表示
+duckdb src/ml/data/dwh/house_price_dwh.duckdb "SELECT * FROM v_summary_statistics;"
+
+# 地域別分析を表示
+duckdb src/ml/data/dwh/house_price_dwh.duckdb "SELECT * FROM v_location_analytics ORDER BY avg_price DESC;"
+
+# 価格帯別分析を表示
+duckdb src/ml/data/dwh/house_price_dwh.duckdb "
+SELECT 
+  CASE 
+    WHEN price < 300000 THEN 'Under $300k'
+    WHEN price < 500000 THEN '$300k-$500k'
+    WHEN price < 800000 THEN '$500k-$800k'
+    ELSE 'Over $800k'
+  END as price_range,
+  COUNT(*) as house_count,
+  AVG(price) as avg_price
+FROM fact_house_transactions
+GROUP BY price_range
+ORDER BY MIN(price);
+"
 ```
 
 ### 🔧 DWH管理コマンド
@@ -310,6 +337,10 @@ cp src/ml/data/dwh/house_price_dwh.duckdb src/ml/data/dwh/backups/house_price_dw
 ```bash
 # Ubuntu/WSLでのインストール
 sudo snap install duckdb
+
+# インストール確認
+which duckdb
+duckdb --version
 
 # または、Pythonから直接実行
 python -c "
@@ -343,6 +374,91 @@ con.close()
 "
 ```
 
+#### 4. CLIでアクセスできない場合
+
+**問題**: `duckdb src/ml/data/dwh/house_price_dwh.duckdb`でプロンプトが表示されない
+
+**解決策**:
+```bash
+# 1. ファイルの存在確認
+ls -la src/ml/data/dwh/house_price_dwh.duckdb
+
+# 2. ファイルの権限確認
+chmod 644 src/ml/data/dwh/house_price_dwh.duckdb
+
+# 3. 絶対パスでアクセス
+duckdb /home/wsl/dev/mlops/fullstack-mlops/src/ml/data/dwh/house_price_dwh.duckdb
+
+# 4. ワンライナーでテスト
+duckdb src/ml/data/dwh/house_price_dwh.duckdb ".tables"
+```
+
+#### 5. クエリ実行時のエラー
+
+**問題**: SQLクエリでエラーが発生する
+
+**解決策**:
+```bash
+# 1. テーブル存在確認
+duckdb src/ml/data/dwh/house_price_dwh.duckdb ".tables"
+
+# 2. スキーマ確認
+duckdb src/ml/data/dwh/house_price_dwh.duckdb ".schema"
+
+# 3. 簡単なクエリでテスト
+duckdb src/ml/data/dwh/house_price_dwh.duckdb "SELECT COUNT(*) FROM fact_house_transactions;"
+```
+
+#### 6. VSCode拡張でアクセスできない場合
+
+**問題**: VSCodeでDuckDBファイルを開けない
+
+**解決策**:
+```bash
+# 1. VSCode拡張の再インストール
+# VSCodeで拡張をアンインストール後、再インストール
+
+# 2. ファイルパスの確認
+# WSL環境では、Windows側のVSCodeからWSLのファイルにアクセス
+
+# 3. 代替方法：PythonスクリプトでGUI表示
+python -c "
+import duckdb
+import pandas as pd
+con = duckdb.connect('src/ml/data/dwh/house_price_dwh.duckdb')
+df = con.execute('SELECT * FROM v_summary_statistics').df()
+print(df.to_string(index=False))
+con.close()
+"
+```
+
+#### 7. DuckDBロックエラー
+
+**問題**: `Error: unable to open database: IO Error: Could not set lock on file: Conflicting lock is held`
+
+**解決策**:
+```bash
+# 1. 既存のDuckDBプロセスを確認
+ps aux | grep duckdb
+
+# 2. ユーザープロセスを終了
+pkill -f duckdb
+
+# 3. または、Pythonプロセスを終了
+pkill -f python.*duckdb
+
+# 4. 再度アクセスを試行
+make dwh-tables
+
+# 5. それでも解決しない場合は、データベースファイルを再作成
+make dwh-force
+```
+
+**予防策**:
+- 複数のDuckDBプロセスを同時に起動しない
+- 使用後は必ず`.quit`でCLIを終了
+- Pythonスクリプトでは`con.close()`を確実に実行
+
 ### 🎯 DWH活用のベストプラクティス
 
 #### 1. **定期的なバックアップ**
@@ -363,6 +479,50 @@ cp src/ml/data/dwh/house_price_dwh.duckdb \
 - 定期的なデータ整合性チェック
 - 異常値の検出と処理
 - データ更新履歴の管理
+
+#### 4. VSCodeでのGUI参照
+
+1. **VSCode拡張のインストール**:
+   - VSCode Marketplaceで「DuckDB」を検索
+   - DuckDB拡張をインストール
+
+2. **データベースファイルを開く**:
+   ```bash
+   # WSLからVSCodeを起動
+   code .
+   ```
+   - `src/ml/data/dwh/house_price_dwh.duckdb`を右クリック
+   - 「Open With DuckDB」を選択
+
+3. **GUIでの操作**:
+   - テーブル一覧の表示
+   - SQLクエリの実行
+   - 結果の可視化
+   - データのエクスポート
+
+4. **Pythonスクリプトでの操作**
+
+```bash
+# 統計情報を表示
+make dwh-stats
+
+# 詳細な探索
+make dwh-explore
+
+# カスタムクエリ実行
+python -c "
+import duckdb
+con = duckdb.connect('src/ml/data/dwh/house_price_dwh.duckdb')
+result = con.execute('SELECT * FROM v_summary_statistics').fetchall()
+print('📊 サマリー統計:')
+for row in result:
+    print(f'  総住宅数: {row[0]:,}')
+    print(f'  平均価格: ${row[1]:,.2f}')
+    print(f'  最低価格: ${row[2]:,.2f}')
+    print(f'  最高価格: ${row[3]:,.2f}')
+con.close()
+"
+```
 
 ---
 

@@ -1,7 +1,7 @@
 # ML Model CI/CD Makefile
 # 開発者体験向上のための便利コマンド集
 
-.PHONY: help install test lint format clean train train-force pipeline pipeline-quick release setup-dev check-model status venv dwh dwh-explore dwh-backup dwh-stats
+.PHONY: help install test lint format clean train train-force pipeline pipeline-quick release setup-dev check-model status venv dwh dwh-explore dwh-backup dwh-stats dwh-cli dwh-tables dwh-summary dwh-location dwh-condition dwh-price-range dwh-year-built dwh-unlock
 
 # デフォルトターゲット
 help:
@@ -28,6 +28,14 @@ help:
 	@echo "  dwh-explore    - DWHデータの探索・分析"
 	@echo "  dwh-backup     - DWHデータベースのバックアップ"
 	@echo "  dwh-stats      - DWH統計情報表示"
+	@echo "  dwh-cli        - DuckDB CLI起動"
+	@echo "  dwh-tables     - DWHテーブル一覧表示"
+	@echo "  dwh-summary    - DWHサマリー統計表示"
+	@echo "  dwh-location   - DWH地域別分析表示"
+	@echo "  dwh-condition  - DWH状態別分析表示"
+	@echo "  dwh-price-range - DWH価格帯別分析表示"
+	@echo "  dwh-year-built - DWH築年数別分析表示"
+	@echo "  dwh-unlock     - DWHロック解除"
 	@echo ""
 
 # 仮想環境セットアップ
@@ -241,4 +249,94 @@ dwh-stats:
 		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
 		exit 1; \
 	fi
-	@echo "✅ DWH統計情報表示完了" 
+	@echo "✅ DWH統計情報表示完了"
+
+# DWH CLI起動
+dwh-cli:
+	@echo "🗄️ DuckDB CLIを起動中..."
+	@if [ -f "src/ml/data/dwh/house_price_dwh.duckdb" ]; then \
+		echo "📝 利用可能なコマンド:"; \
+		echo "  .tables                    # テーブル一覧表示"; \
+		echo "  .schema                    # スキーマ表示"; \
+		echo "  SELECT * FROM v_summary_statistics;  # サマリー統計"; \
+		echo "  .quit                      # 終了"; \
+		echo ""; \
+		duckdb src/ml/data/dwh/house_price_dwh.duckdb; \
+	else \
+		echo "❌ DWHデータベースが見つかりません。先に 'make dwh' を実行してください"; \
+		exit 1; \
+	fi
+
+# DWHテーブル一覧表示
+dwh-tables:
+	@echo "📋 DWHテーブル一覧表示中..."
+	@if [ -f "src/ml/data/dwh/house_price_dwh.duckdb" ]; then \
+		duckdb src/ml/data/dwh/house_price_dwh.duckdb ".tables"; \
+	else \
+		echo "❌ DWHデータベースが見つかりません。先に 'make dwh' を実行してください"; \
+		exit 1; \
+	fi
+
+# DWHサマリー統計表示
+dwh-summary:
+	@echo "📊 DWHサマリー統計表示中..."
+	@if [ -f "src/ml/data/dwh/house_price_dwh.duckdb" ]; then \
+		duckdb src/ml/data/dwh/house_price_dwh.duckdb "SELECT * FROM v_summary_statistics;"; \
+	else \
+		echo "❌ DWHデータベースが見つかりません。先に 'make dwh' を実行してください"; \
+		exit 1; \
+	fi
+
+# DWH地域別分析表示
+dwh-location:
+	@echo "📍 DWH地域別分析表示中..."
+	@if [ -f "src/ml/data/dwh/house_price_dwh.duckdb" ]; then \
+		duckdb src/ml/data/dwh/house_price_dwh.duckdb "SELECT * FROM v_location_analytics ORDER BY avg_price DESC;"; \
+	else \
+		echo "❌ DWHデータベースが見つかりません。先に 'make dwh' を実行してください"; \
+		exit 1; \
+	fi
+
+# DWH状態別分析表示
+dwh-condition:
+	@echo "🏠 DWH状態別分析表示中..."
+	@if [ -f "src/ml/data/dwh/house_price_dwh.duckdb" ]; then \
+		duckdb src/ml/data/dwh/house_price_dwh.duckdb "SELECT * FROM v_condition_analytics ORDER BY avg_price DESC;"; \
+	else \
+		echo "❌ DWHデータベースが見つかりません。先に 'make dwh' を実行してください"; \
+		exit 1; \
+	fi
+
+# DWH価格帯別分析表示
+dwh-price-range:
+	@echo "💰 DWH価格帯別分析表示中..."
+	@if [ -f "src/ml/data/dwh/house_price_dwh.duckdb" ]; then \
+		duckdb src/ml/data/dwh/house_price_dwh.duckdb "SELECT CASE WHEN price < 300000 THEN 'Under $300k' WHEN price < 500000 THEN '$300k-$500k' WHEN price < 800000 THEN '$500k-$800k' ELSE 'Over $800k' END as price_range, COUNT(*) as house_count, AVG(price) as avg_price FROM fact_house_transactions GROUP BY price_range ORDER BY MIN(price);"; \
+	else \
+		echo "❌ DWHデータベースが見つかりません。先に 'make dwh' を実行してください"; \
+		exit 1; \
+	fi
+
+# DWH築年数別分析表示
+dwh-year-built:
+	@echo "🏗️ DWH築年数別分析表示中..."
+	@if [ -f "src/ml/data/dwh/house_price_dwh.duckdb" ]; then \
+		duckdb src/ml/data/dwh/house_price_dwh.duckdb "SELECT y.decade, AVG(h.price) as avg_price, COUNT(*) as house_count FROM fact_house_transactions h JOIN dim_years y ON h.year_built_id = y.year_id GROUP BY y.decade ORDER BY y.decade;"; \
+	else \
+		echo "❌ DWHデータベースが見つかりません。先に 'make dwh' を実行してください"; \
+		exit 1; \
+	fi
+
+# DWHロック解除
+dwh-unlock:
+	@echo "🔓 DWHロック解除中..."
+	@echo "📋 既存のDuckDBプロセスを確認中..."
+	@ps aux | grep duckdb | grep -v grep || echo "✅ DuckDBプロセスが見つかりません"
+	@echo "🔄 ユーザープロセスを終了中..."
+	@-pkill -f duckdb 2>/dev/null || true
+	@echo "✅ ユーザープロセス終了処理完了"
+	@echo "🔄 Pythonプロセスを終了中..."
+	@-pkill -f python.*duckdb 2>/dev/null || true
+	@echo "✅ Pythonプロセス終了処理完了"
+	@echo "✅ DWHロック解除完了"
+	@echo "📝 再度 'make dwh-tables' などを実行してください" 
