@@ -111,18 +111,59 @@ jobs:
           # DuckDBに接続
           conn = duckdb.connect('src/ml/data/dwh/data/house_price_dwh.duckdb')
           
-          # Bronze層のデータをv_house_analyticsビューに挿入
+          # まず、Bronze層のデータからディメンションテーブルにデータを挿入
+          print('📊 ディメンションテーブルにデータを挿入中...')
+          
+          # ユニークなlocationを取得してdim_locationsに挿入
+          locations = conn.execute('SELECT DISTINCT location FROM bronze_raw_house_data').fetchdf()
+          for idx, row in locations.iterrows():
+              location_name = row['location']
+              location_type = 'Suburban' if 'suburban' in location_name.lower() else 'Urban' if 'urban' in location_name.lower() else 'Rural'
+              conn.execute('''
+                  INSERT OR IGNORE INTO dim_locations (location_id, location_name, location_type)
+                  VALUES (?, ?, ?)
+              ''', [idx + 1, location_name, location_type])
+          
+          # ユニークなconditionを取得してdim_conditionsに挿入
+          conditions = conn.execute('SELECT DISTINCT condition FROM bronze_raw_house_data').fetchdf()
+          condition_scores = {'Excellent': 5, 'Good': 4, 'Fair': 3, 'Poor': 2, 'Very Poor': 1}
+          for idx, row in conditions.iterrows():
+              condition_name = row['condition']
+              condition_score = condition_scores.get(condition_name, 3)
+              conn.execute('''
+                  INSERT OR IGNORE INTO dim_conditions (condition_id, condition_name, condition_score)
+                  VALUES (?, ?, ?)
+              ''', [idx + 1, condition_name, condition_score])
+          
+          # ユニークなyear_builtを取得してdim_yearsに挿入
+          years = conn.execute('SELECT DISTINCT year_built FROM bronze_raw_house_data').fetchdf()
+          for idx, row in years.iterrows():
+              year_value = row['year_built']
+              decade = f\"{year_value // 10 * 10}s\"
+              century = f\"{year_value // 100 + 1}th Century\"
+              conn.execute('''
+                  INSERT OR IGNORE INTO dim_years (year_id, year_value, decade, century)
+                  VALUES (?, ?, ?, ?)
+              ''', [idx + 1, year_value, decade, century])
+          
+          print('✅ ディメンションテーブルにデータを挿入しました')
+          
+          # 次に、Bronze層のデータをfact_house_transactionsに挿入
+          print('📊 fact_house_transactionsにデータを挿入中...')
           conn.execute('''
             INSERT INTO fact_house_transactions 
             (transaction_id, house_id, location_id, condition_id, year_built_id, price, sqft, bedrooms, bathrooms)
             SELECT 
-              id as transaction_id,
-              id as house_id,
-              (SELECT location_id FROM dim_locations WHERE location_name = b.location LIMIT 1) as location_id,
-              (SELECT condition_id FROM dim_conditions WHERE condition_name = b.condition LIMIT 1) as condition_id,
-              (SELECT year_id FROM dim_years WHERE year_value = b.year_built LIMIT 1) as year_built_id,
-              price, sqft, bedrooms, bathrooms
+              b.id as transaction_id,
+              b.id as house_id,
+              l.location_id,
+              c.condition_id,
+              y.year_id,
+              b.price, b.sqft, b.bedrooms, b.bathrooms
             FROM bronze_raw_house_data b
+            JOIN dim_locations l ON b.location = l.location_name
+            JOIN dim_conditions c ON b.condition = c.condition_name
+            JOIN dim_years y ON b.year_built = y.year_value
           ''')
           
           print('✅ Bronze層のデータをfact_house_transactionsに変換しました')
