@@ -475,12 +475,22 @@ ingest:
 # dbtでSilver/Gold層まで作成
 dbt:
 	@echo "🔄 dbtでSilver/Gold層まで作成中..."
-	@cd src/ml/data/dwh/house_price_dbt && dbt run --select gold && dbt test
+	@if [ -d ".venv" ]; then \
+		cd src/ml/data/dwh/house_price_dbt && ../../../../.venv/bin/dbt run --select gold && ../../../../.venv/bin/dbt test; \
+	else \
+		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
+		exit 1; \
+	fi
 
 # dbtドキュメント生成
 docs:
 	@echo "📄 dbtドキュメント生成中..."
-	@cd src/ml/data/dwh/house_price_dbt && dbt docs generate && dbt docs serve
+	@if [ -d ".venv" ]; then \
+		cd src/ml/data/dwh/house_price_dbt && ../../../../.venv/bin/dbt docs generate && ../../../../.venv/bin/dbt docs serve; \
+	else \
+		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
+		exit 1; \
+	fi
 
 # dbt学習スクリプト実行
 train-dbt:
