@@ -179,6 +179,10 @@ train-force:
 pipeline: clean install test train
 	@echo "🚀 全パイプライン実行完了"
 
+# 一括実行（全パイプライン）
+pipeline-all: clean deps-dev test dwh-bronze dbt train-dbt
+	@echo "🚀 一括実行（全パイプライン）完了"
+
 # クイックパイプライン実行（既存モデルがあればスキップ）
 pipeline-quick: clean install test train
 	@echo "⚡ クイックパイプライン実行完了"
@@ -460,7 +464,7 @@ ingest:
 dbt:
 	@echo "🔄 dbtでSilver/Gold層まで作成中..."
 	@if [ -d ".venv" ]; then \
-		cd src/ml/data/dwh/house_price_dbt && ../../../../.venv/bin/dbt run --select gold && ../../../../.venv/bin/dbt test; \
+		cd src/ml/data/dwh/house_price_dbt && ../../../.venv/bin/dbt run --select gold && ../../../.venv/bin/dbt test; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
@@ -470,7 +474,7 @@ dbt:
 docs:
 	@echo "📄 dbtドキュメント生成中..."
 	@if [ -d ".venv" ]; then \
-		cd src/ml/data/dwh/house_price_dbt && ../../../../.venv/bin/dbt docs generate && ../../../../.venv/bin/dbt docs serve; \
+		cd src/ml/data/dwh/house_price_dbt && ../../../.venv/bin/dbt docs generate && ../../../.venv/bin/dbt docs serve; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
