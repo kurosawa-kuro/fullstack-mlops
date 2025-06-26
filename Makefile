@@ -35,6 +35,16 @@ help:
 	@echo "  make setup-dev        # 開発環境セットアップ"
 	@echo "  make dwh-cli          # DuckDB CLI起動"
 	@echo "  make dwh-unlock       # DWHロック解除"
+	@echo ""
+	@echo "📊 Metabase BI統合:"
+	@echo "  make metabase-full    # Metabase完全セットアップ"
+	@echo "  make metabase-setup   # Metabaseセットアップ"
+	@echo "  make metabase-up      # Metabase起動"
+	@echo "  make metabase-down    # Metabase停止"
+	@echo "  make metabase-status  # Metabase状態確認"
+	@echo "  make metabase-logs    # Metabaseログ確認"
+	@echo "  make metabase-check-connection  # 接続確認"
+	@echo "  make metabase-dashboard-setup   # ダッシュボード作成支援"
 
 # 仮想環境セットアップ
 venv:
@@ -467,4 +477,107 @@ train-dbt:
 
 # 一括実行
 all: ingest dbt train-dbt
-	@echo "🚀 一括実行完了" 
+	@echo "🚀 一括実行完了"
+
+# =============================================================================
+# 📊 Metabase BI統合コマンド
+# =============================================================================
+
+# Metabaseセットアップ
+metabase-setup:
+	@echo "🔧 Metabase DuckDB セットアップ中..."
+	@cd deployment/metabase && ./setup.sh
+	@echo "✅ Metabaseセットアップ完了"
+
+# Metabase起動
+metabase-up:
+	@echo "🚀 Metabase起動中..."
+	@docker-compose up -d metabase
+	@echo "✅ Metabase起動完了"
+	@echo "🌐 アクセスURL: http://localhost:3000"
+
+# Metabase停止
+metabase-down:
+	@echo "🛑 Metabase停止中..."
+	@docker-compose stop metabase
+	@echo "✅ Metabase停止完了"
+
+# Metabase再起動
+metabase-restart:
+	@echo "🔄 Metabase再起動中..."
+	@docker-compose restart metabase
+	@echo "✅ Metabase再起動完了"
+
+# Metabaseログ確認
+metabase-logs:
+	@echo "📋 Metabaseログ表示中..."
+	@docker-compose logs -f metabase
+
+# Metabase状態確認
+metabase-status:
+	@echo "📊 Metabase状態確認中..."
+	@docker-compose ps metabase
+	@echo ""
+	@echo "🔍 ヘルスチェック:"
+	@curl -s http://localhost:3000/api/health || echo "❌ Metabaseに接続できません"
+
+# Metabaseデータベース接続確認
+metabase-check-connection:
+	@echo "🔗 Metabase DuckDB接続確認中..."
+	@echo "📋 接続設定例:"
+	@echo "  Database Type: DuckDB"
+	@echo "  Connection String: jdbc:duckdb:/app/data/house_price_dwh.duckdb"
+	@echo ""
+	@echo "📊 利用可能なテーブル/ビュー:"
+	@if [ -f "src/ml/data/dwh/data/house_price_dwh.duckdb" ]; then \
+		duckdb src/ml/data/dwh/data/house_price_dwh.duckdb ".tables"; \
+	else \
+		echo "❌ DWHデータベースが見つかりません。先に 'make dwh' を実行してください"; \
+	fi
+
+# Metabaseダッシュボード作成支援
+metabase-dashboard-setup:
+	@echo "🎨 Metabaseダッシュボード作成支援..."
+	@echo "📋 推奨ダッシュボード構成:"
+	@echo ""
+	@echo "1. 📊 住宅価格概要ダッシュボード"
+	@echo "   - 価格分布ヒストグラム"
+	@echo "   - 地域別平均価格"
+	@echo "   - 築年数別価格推移"
+	@echo "   - 条件別価格比較"
+	@echo ""
+	@echo "2. 🔮 予測分析ダッシュボード"
+	@echo "   - 予測精度メトリクス"
+	@echo "   - 特徴量重要度"
+	@echo "   - 予測vs実測比較"
+	@echo "   - モデル性能推移"
+	@echo ""
+	@echo "3. 📈 市場分析ダッシュボード"
+	@echo "   - 価格トレンド分析"
+	@echo "   - 地域別市場動向"
+	@echo "   - 季節性分析"
+	@echo "   - 価格変動要因"
+	@echo ""
+	@echo "🌐 アクセスURL: http://localhost:3000"
+
+# Metabase完全セットアップ（セットアップ + 起動）
+metabase-full: metabase-setup metabase-up
+	@echo "✅ Metabase完全セットアップ完了"
+	@echo "🌐 アクセスURL: http://localhost:3000"
+	@echo "📋 初期設定: 初回アクセス時に管理者アカウントを作成してください"
+
+# Metabaseクリーンアップ
+metabase-clean:
+	@echo "🧹 Metabaseクリーンアップ中..."
+	@docker-compose down metabase
+	@rm -rf deployment/metabase/data/*
+	@rm -rf deployment/metabase/plugins/*
+	@echo "✅ Metabaseクリーンアップ完了"
+
+# Metabaseドライバ更新
+metabase-update-driver:
+	@echo "🔄 Metabase DuckDBドライバ更新中..."
+	@rm -f deployment/metabase/plugins/duckdb.metabase-driver.jar
+	@bash deployment/metabase/setup.sh
+	@echo "✅ ドライバ更新完了"
+	@echo "🔄 Metabase再起動が必要です: make metabase-restart" 
