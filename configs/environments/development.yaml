@@ -1,0 +1,17 @@
+app:
+  environment: development
+  name: House Price Predictor
+  version: 1.0.0
+database:
+  path: models/trained/house_price_dwh.duckdb
+  type: duckdb
+ensemble: {}
+logging:
+  file: logs/app.log
+  format: json
+  level: INFO
+mlflow:
+  experiment_name: house_price_prediction
+  tracking_uri: http://localhost:5555
+models: {}
+training: {}
