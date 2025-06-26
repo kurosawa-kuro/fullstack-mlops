@@ -241,3 +241,16 @@ logs/
 .env.development
 .env.test
 .env.production
+deployment/metabase/data/metabase.db.mv.db
+
+# Metabase H2 Database files
+deployment/metabase/data/metabase.db.mv.db
+deployment/metabase/data/metabase.db.trace.db
+deployment/metabase/data/metabase.db.lock.db
+deployment/metabase/data/metabase.db.newFile
+deployment/metabase/data/metabase.db.oldFile
+deployment/metabase/data/metabase.db.properties
+deployment/metabase/data/metabase.db.script
+deployment/metabase/data/metabase.db.script.backup
+deployment/metabase/data/metabase.db/metabase.db.mv.db
+deployment/metabase/data/metabase.db/metabase.db.trace.db
