@@ -241,3 +241,5 @@ logs/
 .env.development
 .env.test
 .env.production
+deployment/metabase/data/metabase.db/metabase.db.mv.db
+deployment/metabase/data/metabase.db/metabase.db.trace.db
