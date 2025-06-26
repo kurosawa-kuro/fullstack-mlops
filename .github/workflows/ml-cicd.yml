@@ -31,9 +31,10 @@ env:
   DB_TYPE: "duckdb"
   DB_PATH: "src/ml/data/dwh/data/house_price_dwh.duckdb"
   
-  # MLflow設定
-  MLFLOW_TRACKING_URI: "http://localhost:5555"
+  # MLflow設定（CI/CD環境ではローカルファイルシステムを使用）
+  MLFLOW_TRACKING_URI: "file:./mlruns"
   MLFLOW_EXPERIMENT_NAME: "house_price_prediction"
+  MLFLOW_DISABLE_TRACKING: "false"
   
   # ログ設定
   LOG_LEVEL: "INFO"
@@ -92,6 +93,42 @@ jobs:
           mkdir -p src/ml/data/dwh/config
           mkdir -p src/ml/models/trained
           mkdir -p logs
+          mkdir -p mlruns
+
+      - name: Initialize MLflow
+        run: |
+          # MLflowの環境変数を設定
+          export MLFLOW_TRACKING_URI="file:./mlruns"
+          export MLFLOW_EXPERIMENT_NAME="house_price_prediction"
+          
+          # MLflowの初期化
+          python -c "
+          import mlflow
+          import os
+          import sys
+          
+          try:
+              # MLflowの設定
+              mlflow.set_tracking_uri('file:./mlruns')
+              mlflow.set_experiment('house_price_prediction')
+              
+              print('✅ MLflow初期化完了')
+              print(f'📁 MLflow tracking URI: {mlflow.get_tracking_uri()}')
+              
+              # 実験の存在確認
+              experiment = mlflow.get_experiment_by_name('house_price_prediction')
+              if experiment:
+                  print(f'🔬 MLflow experiment ID: {experiment.experiment_id}')
+              else:
+                  print('⚠️  MLflow experiment not found, creating new one')
+                  mlflow.create_experiment('house_price_prediction')
+                  
+          except Exception as e:
+              print(f'⚠️  MLflow初期化エラー: {e}')
+              print('📝 MLflowなしで続行します')
+              # MLflowを無効化
+              os.environ['MLFLOW_DISABLE_TRACKING'] = 'true'
+          "
 
       - name: Create sample data
         run: |
@@ -226,6 +263,13 @@ jobs:
           path: src/ml/data/dwh/data/house_price_dwh.duckdb
           retention-days: 30
 
+      - name: Upload MLflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlflow-artifacts-${{ github.sha }}
+          path: mlruns/
+          retention-days: 30
+
   # テスト実行（DuckDB DWH構築後のテスト）
   test:
     runs-on: ubuntu-latest
@@ -256,6 +300,7 @@ jobs:
       - name: Create necessary directories
         run: |
           mkdir -p logs
+          mkdir -p mlruns
 
       - name: Download model artifacts
         uses: actions/download-artifact@v4
@@ -268,6 +313,12 @@ jobs:
         with:
           name: duckdb-dwh-${{ github.sha }}
           path: src/ml/data/dwh/data/
+
+      - name: Download MLflow artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: mlflow-artifacts-${{ github.sha }}
+          path: mlruns/
 
       - name: Run tests
         run: |
@@ -311,6 +362,7 @@ jobs:
       - name: Create necessary directories
         run: |
           mkdir -p logs
+          mkdir -p mlruns
 
       - name: Download model artifacts
         uses: actions/download-artifact@v4
@@ -323,6 +375,12 @@ jobs:
         with:
           name: duckdb-dwh-${{ github.sha }}
           path: src/ml/data/dwh/data/
+
+      - name: Download MLflow artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: mlflow-artifacts-${{ github.sha }}
+          path: mlruns/
 
       - name: Run model performance tests
         run: |
@@ -394,6 +452,12 @@ jobs:
           name: duckdb-dwh-${{ github.sha }}
           path: src/ml/data/dwh/data/
 
+      - name: Download MLflow artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: mlflow-artifacts-${{ github.sha }}
+          path: mlruns/
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
@@ -401,6 +465,7 @@ jobs:
             src/ml/models/trained/house_price_prediction.pkl
             src/ml/models/trained/house_price_prediction_encoders.pkl
             src/ml/data/dwh/data/house_price_dwh.duckdb
+            mlruns/
           body: |
             ## 🏠 House Price Prediction Model Release (DuckDB対応)
             
