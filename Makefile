@@ -460,11 +460,12 @@ ingest:
 	fi
 	@echo "✅ DWH構築完了"
 
-# dbtでSilver/Gold層まで作成
+# dbtで全層（Bronze/Silver/Gold）作成
 dbt:
-	@echo "🔄 dbtでSilver/Gold層まで作成中..."
+	@echo "🔄 dbtで全層（Bronze/Silver/Gold）作成中..."
 	@if [ -d ".venv" ]; then \
-		cd src/ml/data/dwh/house_price_dbt && ../../../.venv/bin/dbt run --select gold && ../../../.venv/bin/dbt test; \
+		.venv/bin/dbt run --project-dir src/ml/data/dwh/house_price_dbt && \
+		.venv/bin/dbt test --project-dir src/ml/data/dwh/house_price_dbt; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
