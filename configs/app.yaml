@@ -1,0 +1,153 @@
+# アプリケーション設定
+app:
+  name: "House Price Predictor"
+  version: "1.0.0"
+  environment: "development"
+  debug: true
+  host: "0.0.0.0"
+  port: 8000
+  workers: 4
+  timeout: 30
+
+# ログ設定
+logging:
+  level: "INFO"
+  format: "json"
+  file: "logs/app.log"
+  max_size: "100MB"
+  backup_count: 5
+
+# データベース設定
+database:
+  type: "duckdb"
+  path: "data/house_price_dwh.duckdb"
+  read_only: false
+  memory_limit: "4GB"
+
+# MLflow設定
+mlflow:
+  tracking_uri: "http://localhost:5555"
+  experiment_name: "house_price_prediction"
+  model_registry_uri: "sqlite:///mlflow.db"
+  artifact_store: "mlruns"
+
+# モデル設定
+models:
+  base_models:
+    - name: "random_forest"
+      class: "sklearn.ensemble.RandomForestRegressor"
+      params:
+        n_estimators: 100
+        max_depth: 10
+        random_state: 42
+    - name: "xgboost"
+      class: "xgboost.XGBRegressor"
+      params:
+        n_estimators: 100
+        max_depth: 6
+        learning_rate: 0.1
+        random_state: 42
+    - name: "lightgbm"
+      class: "lightgbm.LGBMRegressor"
+      params:
+        n_estimators: 100
+        max_depth: 6
+        learning_rate: 0.1
+        random_state: 42
+
+  ensemble:
+    voting:
+      enabled: true
+      weights: [0.3, 0.4, 0.3]
+    stacking:
+      enabled: true
+      meta_learner: "sklearn.linear_model.Ridge"
+      cv_folds: 5
+
+# 特徴量設定
+features:
+  numerical:
+    - "sqft"
+    - "bedrooms"
+    - "bathrooms"
+    - "house_age"
+    - "bed_bath_ratio"
+    - "condition_score"
+    - "year_value"
+  categorical:
+    - "location_name"
+    - "location_type"
+    - "condition_name"
+    - "decade"
+    - "century"
+  derived:
+    - "log_sqft"
+    - "house_age_squared"
+    - "total_rooms"
+    - "sqft_per_bedroom"
+
+# 訓練設定
+training:
+  test_size: 0.2
+  random_state: 42
+  cv_folds: 5
+  scoring: "neg_mean_absolute_error"
+  n_jobs: -1
+
+# API設定
+api:
+  title: "House Price Prediction API"
+  description: "MLOps pipeline for house price prediction"
+  version: "1.0.0"
+  docs_url: "/docs"
+  redoc_url: "/redoc"
+  openapi_url: "/openapi.json"
+
+# UI設定
+ui:
+  title: "House Price Predictor"
+  theme: "light"
+  page_config:
+    page_title: "House Price Predictor"
+    page_icon: "🏠"
+    layout: "wide"
+    initial_sidebar_state: "expanded"
+
+# 監視設定
+monitoring:
+  metrics:
+    enabled: true
+    interval: 60
+    endpoint: "/metrics"
+  health_check:
+    enabled: true
+    endpoint: "/health"
+    timeout: 5
+  alerts:
+    enabled: true
+    email: "admin@example.com"
+    slack_webhook: ""
+
+# セキュリティ設定
+security:
+  cors:
+    enabled: true
+    origins: ["*"]
+    methods: ["GET", "POST", "PUT", "DELETE"]
+    headers: ["*"]
+  rate_limit:
+    enabled: true
+    requests_per_minute: 100
+  authentication:
+    enabled: false
+    type: "jwt"
+    secret_key: "your-secret-key"
+
+# キャッシュ設定
+cache:
+  enabled: true
+  type: "redis"
+  host: "localhost"
+  port: 6379
+  db: 0
+  ttl: 3600 
