@@ -1,0 +1,34 @@
+version: 2
+
+models:
+  - name: ft_house_ml
+    description: "ML-ready features for house price prediction (Gold Layer)"
+    columns:
+      - name: price
+        description: "Target variable (house price)"
+        tests:
+          - not_null
+      - name: sqft
+        description: "Square footage"
+        tests:
+          - not_null
+      - name: bedrooms
+        description: "Number of bedrooms"
+        tests:
+          - not_null
+      - name: bathrooms
+        description: "Number of bathrooms"
+        tests:
+          - not_null
+      - name: year_built
+        description: "Year built"
+        tests:
+          - not_null
+      - name: location_encoded
+        description: "Encoded location"
+        tests:
+          - not_null
+      - name: condition_score
+        description: "Numerical condition score"
+        tests:
+          - not_null 
