@@ -176,7 +176,7 @@ def create_preprocessor():
 
 def preprocess_data(data, target_variable):
     """
-    Preprocess data for machine learning (v_house_analytics互換)
+    Preprocess data for machine learning (DuckDB v_house_analytics view compatible)
     """
     logger.info("Preprocessing data for machine learning (v_house_analytics互換)")
     # 必要なカラムのみ抽出
@@ -185,9 +185,9 @@ def preprocess_data(data, target_variable):
     X["bedrooms"] = data["bedrooms"]
     X["bathrooms"] = data["bathrooms"]
     
-    # year_builtからhouse_ageを計算（実際のカラム名はyear_built）
+    # year_valueからhouse_ageを計算（DuckDBビューではyear_valueとして提供）
     current_year = 2025
-    X["house_age"] = current_year - data["year_built"]
+    X["house_age"] = current_year - data["year_value"]
     
     X["price_per_sqft"] = data["price"] / data["sqft"]
     X["bed_bath_ratio"] = data["bedrooms"] / data["bathrooms"]
@@ -195,9 +195,9 @@ def preprocess_data(data, target_variable):
         X["bed_bath_ratio"].replace([np.inf, -np.inf], np.nan).fillna(0)
     )
     
-    # 実際のカラム名を使用
-    X["location"] = data["location"]
-    X["condition"] = data["condition"]
+    # DuckDBビューのカラム名を使用
+    X["location"] = data["location_name"]
+    X["condition"] = data["condition_name"]
     
     y = data[target_variable]
     preprocessor = create_preprocessor()
@@ -244,11 +244,11 @@ def main(args):
     # Preprocess data
     X, y, preprocessor = preprocess_data(cleaned_data, target)  # データを前処理
 
-    # 特徴量名リストを取得
+    # 特徴量名リストを取得（DuckDBビュー構造に合わせて修正）
     features_used = list(
         cleaned_data.drop(columns=[target])
         .drop(
-            columns=["transaction_id", "transaction_date", "price_per_sqft"],
+            columns=["transaction_id", "transaction_date", "price_per_sqft", "location_type", "condition_score", "decade", "century"],
             errors="ignore",
         )
         .columns

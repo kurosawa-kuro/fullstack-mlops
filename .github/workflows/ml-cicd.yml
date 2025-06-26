@@ -87,11 +87,28 @@ jobs:
           import sys
           sys.path.insert(0, 'src')
           import duckdb
+          import pandas as pd
           
           # DuckDBに接続
           conn = duckdb.connect('src/ml/data/dwh/data/house_price_dwh.duckdb')
           
-          # シンプルなv_house_analyticsビューを作成（Bronze層のデータを直接使用）
+          # サンプルデータを作成
+          sample_data = pd.DataFrame({
+              'id': range(1, 11),
+              'sqft': [1500, 2000, 1200, 1800, 2200, 1600, 2400, 1400, 1900, 2100],
+              'bedrooms': [3, 4, 2, 3, 4, 3, 5, 2, 3, 4],
+              'bathrooms': [2, 3, 1, 2, 3, 2, 4, 1, 2, 3],
+              'year_built': [2010, 2015, 2008, 2012, 2018, 2011, 2020, 2009, 2013, 2017],
+              'location': ['Suburban', 'Urban', 'Rural', 'Suburban', 'Urban', 'Suburban', 'Urban', 'Rural', 'Suburban', 'Urban'],
+              'condition': ['Good', 'Excellent', 'Fair', 'Good', 'Excellent', 'Good', 'Excellent', 'Fair', 'Good', 'Excellent'],
+              'price': [300000, 450000, 200000, 350000, 500000, 320000, 550000, 180000, 380000, 480000]
+          })
+          
+          # サンプルデータをテーブルとして保存
+          conn.execute('DROP TABLE IF EXISTS bronze_raw_house_data')
+          conn.execute('CREATE TABLE bronze_raw_house_data AS SELECT * FROM sample_data')
+          
+          # シンプルなv_house_analyticsビューを作成
           conn.execute('''
             CREATE OR REPLACE VIEW v_house_analytics AS
             SELECT 
@@ -276,15 +293,15 @@ jobs:
           model = joblib.load('src/ml/models/trained/house_price_prediction.pkl')
           preprocessor = joblib.load('src/ml/models/trained/house_price_prediction_encoders.pkl')
           
-          # サンプルデータで予測
+          # サンプルデータで予測（DuckDBビューのカラム名を使用）
           sample = data.iloc[0:1]
           X = pd.DataFrame({
               'sqft': sample['sqft'],
               'bedrooms': sample['bedrooms'],
               'bathrooms': sample['bathrooms'],
               'house_age': sample['house_age'],
-              'price_per_sqft': sample['price'] / sample['sqft'],
-              'bed_bath_ratio': sample['bedrooms'] / sample['bathrooms'],
+              'price_per_sqft': sample['price_per_sqft'],
+              'bed_bath_ratio': sample['bed_bath_ratio'],
               'location': sample['location_name'],
               'condition': sample['condition_name']
           })
