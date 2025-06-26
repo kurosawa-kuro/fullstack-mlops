@@ -5,6 +5,7 @@
 ## 🎯 プロジェクト概要
 
 - **データ基盤**: DuckDB DWH（高速・軽量な分析データベース）
+- **データ変換**: dbt（データ変換・モデリングツール）
 - **MLパイプライン**: scikit-learn, XGBoost, LightGBM, アンサンブル（Voting/Stacking）
 - **実験管理**: MLflow（モデルライフサイクル管理）
 - **API/フロント**: FastAPI（高性能API）, Streamlit（データアプリ）
@@ -113,16 +114,17 @@ mlops/fullstack-mlops/
 ```mermaid
 graph TD
     A[データソース] --> B[DuckDB DWH構築]
-    B --> C[特徴量エンジニアリング]
-    C --> D[モデル訓練]
-    D --> E[アンサンブル学習]
-    E --> F[MLflow実験管理]
-    F --> G[FastAPI API]
-    F --> H[Streamlit UI]
-    F --> I[Metabase BI]
-    G --> J[CI/CD自動化]
-    H --> J
-    I --> J
+    B --> C[dbtデータ変換]
+    C --> D[特徴量エンジニアリング]
+    D --> E[モデル訓練]
+    E --> F[アンサンブル学習]
+    F --> G[MLflow実験管理]
+    G --> H[FastAPI API]
+    G --> I[Streamlit UI]
+    G --> J[Metabase BI]
+    H --> K[CI/CD自動化]
+    I --> K
+    J --> K
 ```
 
 ### 🔄 パイプライン詳細
@@ -132,33 +134,39 @@ graph TD
    - SQL/Python統合
    - 自動スキーマ管理
 
-2. **データ前処理・特徴量エンジニアリング**
+2. **dbtデータ変換・モデリング**
+   - SQLベースのデータ変換パイプライン
+   - データ品質テスト・バリデーション
+   - ドキュメント自動生成
+   - 依存関係管理・DAG構築
+
+3. **データ前処理・特徴量エンジニアリング**
    - 欠損値補完・外れ値除去
    - 新規特徴量生成（面積単価・部屋比率など）
    - 自動化パイプライン
 
-3. **モデル訓練（単体/アンサンブル）**
+4. **モデル訓練（単体/アンサンブル）**
    - 単体モデル：RandomForest, XGBoost, LightGBM
    - アンサンブル：Voting, Stacking
    - ハイパーパラメータ最適化
 
-4. **MLflowによる実験管理・モデル登録**
+5. **MLflowによる実験管理・モデル登録**
    - 実験履歴管理
    - モデルバージョニング
    - デプロイメント追跡
 
-5. **API/フロントエンド公開（FastAPI/Streamlit）**
+6. **API/フロントエンド公開（FastAPI/Streamlit）**
    - RESTful API
    - インタラクティブUI
    - リアルタイム予測
 
-6. **Metabase BI統合（DuckDB連携）**
+7. **Metabase BI統合（DuckDB連携）**
    - データ可視化・分析
    - ダッシュボード作成
    - インタラクティブ分析
    - チーム共有機能
 
-7. **CI/CD自動化（GitHub Actions - DuckDB対応）**
+8. **CI/CD自動化（GitHub Actions - DuckDB対応）**
    - 自動テスト・訓練
    - モデルリリース
    - 品質保証
@@ -623,206 +631,3 @@ curl -X POST "http://localhost:8000/predict/batch" \
 -H "Content-Type: application/json" \
 -d '[{"sqft": 1500, "bedrooms": 3}, {"sqft": 2000, "bedrooms": 4}]'
 ```
-
-#### Web UI
-- ブラウザで `http://localhost:8501` にアクセス
-- フォームに入力してリアルタイム予測
-- 予測履歴・可視化機能
-
----
-
-## 📞 サポート
-
-### 🐛 問題報告
-- [GitHub Issues](https://github.com/your-repo/issues) でバグ報告
-- [GitHub Discussions](https://github.com/your-repo/discussions) で質問・議論
-
-### 📚 ドキュメント
-- [API ドキュメント](http://localhost:8000/docs)
-- [技術ドキュメント](./docs/)
-- [チュートリアル](./tutorials/)
-
-### 👥 コミュニティ
-- [Discord](https://discord.gg/your-server)
-- [Slack](https://your-workspace.slack.com)
-- [Twitter](https://twitter.com/your-handle)
-
----
-
-## 📊 Metabase BI統合（DuckDB連携）
-
-### 🚀 セットアップ
-```bash
-# Metabase完全セットアップ（推奨）
-make metabase-full
-
-# または個別実行
-make metabase-setup    # セットアップ
-make metabase-up       # 起動
-```
-
-### 🌐 アクセス
-- **Web UI**: `http://localhost:3000`
-- **初期設定**: 初回アクセス時に管理者アカウントを作成
-
-### 🔗 DuckDB接続設定
-1. **Admin → Databases → Add Database**
-2. **Database Type**: DuckDB
-3. **Connection String**: `jdbc:duckdb:/app/data/house_price_dwh.duckdb`
-
-### 📊 利用可能なデータ
-- **v_house_analytics**: メイン分析ビュー（推奨）
-- **house_prices**: 生データテーブル
-- **house_features**: 特徴量データテーブル
-- **house_predictions**: 予測結果テーブル
-
-### 📈 推奨ダッシュボード
-1. **住宅価格概要ダッシュボード**
-   - 価格分布ヒストグラム
-   - 地域別平均価格
-   - 築年数別価格推移
-   - 条件別価格比較
-
-2. **予測分析ダッシュボード**
-   - 予測精度メトリクス
-   - 特徴量重要度
-   - 予測vs実測比較
-   - モデル性能推移
-
-3. **市場分析ダッシュボード**
-   - 価格トレンド分析
-   - 地域別市場動向
-   - 季節性分析
-   - 価格変動要因
-
-### 🛠️ 主要コマンド
-```bash
-make metabase-status           # 状態確認
-make metabase-logs            # ログ確認
-make metabase-check-connection # 接続確認
-make metabase-dashboard-setup  # ダッシュボード作成支援
-make metabase-down            # 停止
-make metabase-restart         # 再起動
-```
-
-### ✨ 特徴
-- **DuckDB JDBCドライバ**: 高速な分析クエリ
-- **リアルタイム可視化**: データの即座な反映
-- **インタラクティブ分析**: ドリルダウン・フィルター機能
-- **ダッシュボード共有**: チーム内での分析結果共有
-- **自動更新**: スケジュールによるデータ更新
-
----
-
-## 🔮 今後の開発予定
-
-### 🚀 短期目標（1-2ヶ月）
-- [ ] リアルタイムデータ更新機能
-- [ ] モデルA/Bテスト機能
-- [ ] 自動特徴量選択機能
-- [ ] 異常検知機能
-
-### 🎯 中期目標（3-6ヶ月）
-- [ ] Kubernetes対応
-- [ ] マルチテナント対応
-- [ ] リアルタイム予測API
-- [ ] モデル説明可能性機能
-
-### 🌟 長期目標（6ヶ月以上）
-- [ ] エッジコンピューティング対応
-- [ ] フェデレーテッドラーニング
-- [ ] 自動ML（AutoML）機能
-- [ ] 予測精度向上（R² 99.5%以上）
-
----
-
-## 📊 パフォーマンスベンチマーク
-
-### ⚡ 推論速度比較
-| モデル | 単一予測 | バッチ予測（1000件） | メモリ使用量 |
-|--------|----------|---------------------|-------------|
-| Stacking Ensemble | 2ms | 1.5秒 | 512MB |
-| LightGBM | 0.5ms | 0.3秒 | 128MB |
-| XGBoost | 1ms | 0.8秒 | 256MB |
-
-### 💾 ストレージ使用量
-| コンポーネント | サイズ | 説明 |
-|---------------|--------|------|
-| DuckDB DWH | 50MB | 圧縮された列指向データ |
-| 訓練済みモデル | 25MB | アンサンブルモデル |
-| MLflow アーティファクト | 100MB | 実験履歴・モデル |
-
-### 🔧 システム要件
-| 要件 | 最小 | 推奨 | 本番環境 |
-|------|------|------|----------|
-| CPU | 2コア | 4コア | 8コア以上 |
-| メモリ | 4GB | 8GB | 16GB以上 |
-| ストレージ | 10GB | 50GB | 100GB以上 |
-| ネットワーク | 10Mbps | 100Mbps | 1Gbps以上 |
-
----
-
-## 🎓 学習リソース
-
-### 📚 関連ドキュメント
-- [MLOps ベストプラクティス](./docs/mlops-best-practices.md)
-- [DuckDB 活用ガイド](./docs/duckdb-guide.md)
-- [アンサンブル学習解説](./docs/ensemble-learning.md)
-- [FastAPI 開発ガイド](./docs/fastapi-guide.md)
-
-### 🎥 チュートリアル動画
-- [プロジェクト概要](https://youtube.com/watch?v=example1)
-- [セットアップ手順](https://youtube.com/watch?v=example2)
-- [モデル訓練](https://youtube.com/watch?v=example3)
-- [API開発](https://youtube.com/watch?v=example4)
-
-### 🏆 認定プログラム
-- [MLOps エンジニア認定](https://example.com/certification)
-- [データエンジニア認定](https://example.com/certification)
-- [AI/ML スペシャリスト認定](https://example.com/certification)
-
----
-
-## 🤝 コミュニティ
-
-### 👥 参加方法
-- [Discord](https://discord.gg/your-server) - リアルタイムチャット
-- [Slack](https://your-workspace.slack.com) - チーム連携
-- [GitHub Discussions](https://github.com/your-repo/discussions) - 技術議論
-- [Twitter](https://twitter.com/your-handle) - 最新情報
-
-### 🎯 貢献方法
-1. **バグ報告**: GitHub Issuesで問題を報告
-2. **機能提案**: GitHub Discussionsでアイデアを共有
-3. **コード貢献**: プルリクエストでコードを提供
-4. **ドキュメント改善**: ドキュメントの更新・翻訳
-5. **コミュニティ支援**: 他の開発者をサポート
-
-### 🏅 貢献者一覧
-- [@contributor1](https://github.com/contributor1) - コア開発者
-- [@contributor2](https://github.com/contributor2) - フロントエンド開発
-- [@contributor3](https://github.com/contributor3) - インフラ構築
-- [@contributor4](https://github.com/contributor4) - ドキュメント作成
-
----
-
-## 📈 プロジェクト統計
-
-### 📊 GitHub統計
-- **スター数**: 1,234+
-- **フォーク数**: 567+
-- **コントリビューター**: 89+
-- **コミット数**: 2,345+
-- **リリース数**: 15+
-
-### 🏆 受賞歴
-- **2024年 最優秀MLOpsプロジェクト賞**
-- **2024年 オープンソース貢献賞**
-- **2024年 技術革新賞**
-
-### 📰 メディア掲載
-- [TechCrunch](https://techcrunch.com/example) - "革新的なMLOpsプラットフォーム"
-- [VentureBeat](https://venturebeat.com/example) - "AI開発の未来"
-- [ZDNet](https://zdnet.com/example) - "エンタープライズMLOpsの新基準"
-
----
