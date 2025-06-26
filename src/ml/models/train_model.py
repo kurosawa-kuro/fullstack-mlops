@@ -176,23 +176,29 @@ def create_preprocessor():
 
 def preprocess_data(data, target_variable):
     """
-    engineer.py/preprocessor.pklと同じ特徴量のみを使う
+    データを前処理して機械学習用に準備
     """
-    logger.info("Preprocessing data for machine learning (engineer.py互換)")
+    logger.info("Preprocessing data for machine learning (bronze_raw_house_data互換)")
     # 必要なカラムのみ抽出
     X = pd.DataFrame()
     X["sqft"] = data["sqft"]
     X["bedrooms"] = data["bedrooms"]
     X["bathrooms"] = data["bathrooms"]
-    X["house_age"] = data["house_age"]
+    
+    # year_builtからhouse_ageを計算
+    current_year = 2025
+    X["house_age"] = current_year - data["year_built"]
+    
     X["price_per_sqft"] = data["price"] / data["sqft"]
     X["bed_bath_ratio"] = data["bedrooms"] / data["bathrooms"]
     X["bed_bath_ratio"] = (
         X["bed_bath_ratio"].replace([np.inf, -np.inf], np.nan).fillna(0)
     )
-    # location, condition名をengineer.py互換に
-    X["location"] = data["location_name"]
-    X["condition"] = data["condition_name"]
+    
+    # 実際のカラム名を使用
+    X["location"] = data["location"]
+    X["condition"] = data["condition"]
+    
     y = data[target_variable]
     preprocessor = create_preprocessor()
     X_transformed = preprocessor.fit_transform(X)

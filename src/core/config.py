@@ -38,6 +38,8 @@ class Config(BaseSettings):
     log_level: str = Field(default="INFO", description="ログレベル")
     log_format: str = Field(default="json", description="ログフォーマット")
     log_file: str = Field(default="logs/app.log", description="ログファイルパス")
+    log_max_size: str = Field(default="100MB", description="ログファイル最大サイズ")
+    log_backup_count: int = Field(default=5, description="ログバックアップ数")
 
     # API設定
     api_host: str = Field(default="0.0.0.0", description="APIホスト")
@@ -90,6 +92,16 @@ class Config(BaseSettings):
     def is_development(self) -> bool:
         """開発環境かどうかを判定"""
         return self.app_environment.lower() == "development"
+
+    def get(self, key: str, default: Any = None) -> Any:
+        """ドット区切りでネストされた値を取得"""
+        keys = key.split('.')
+        value = self
+        for k in keys:
+            value = getattr(value, k, default)
+            if value is default:
+                break
+        return value
 
 
 # グローバル設定インスタンス

@@ -176,8 +176,16 @@ class StructuredLogger:
         """例外情報付きでログ出力"""
         self.log("ERROR", message, exc_info=True, **kwargs)
 
+    @property
+    def level(self):
+        return self.logger.level
 
-def setup_logging(config: Optional[Dict[str, Any]] = None) -> None:
+    @property
+    def handlers(self):
+        return self.logger.handlers
+
+
+def setup_logging(config: Optional[Dict[str, Any]] = None) -> StructuredLogger:
     """ログ設定を初期化"""
     if config is None:
         app_config = get_config()
@@ -200,18 +208,8 @@ def setup_logging(config: Optional[Dict[str, Any]] = None) -> None:
 
 
 def get_logger(name: str) -> StructuredLogger:
-    """ロガーを取得"""
-    app_config = get_config()
-    config = {
-        "level": app_config.log_level,
-        "format": app_config.log_format,
-        "file": app_config.log_file,
-        "max_size": app_config.log_max_size,
-        "backup_count": app_config.log_backup_count,
-        "console": True,
-    }
-
-    return StructuredLogger(name, config)
+    """指定名のStructuredLoggerを取得"""
+    return StructuredLogger(name)
 
 
 # デフォルトロガー

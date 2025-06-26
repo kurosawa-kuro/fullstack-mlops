@@ -157,7 +157,7 @@ train:
 			--config src/configs/model_config.yaml \
 			--duckdb-path src/ml/data/dwh/data/house_price_dwh.duckdb \
 			--models-dir src/ml/models \
-			--view-name v_house_analytics; \
+			--view-name bronze_raw_house_data; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
@@ -172,7 +172,7 @@ train-force:
 			--config src/configs/model_config.yaml \
 			--duckdb-path src/ml/data/dwh/data/house_price_dwh.duckdb \
 			--models-dir src/ml/models \
-			--view-name v_house_analytics \
+			--view-name bronze_raw_house_data \
 			--force-retrain; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
@@ -211,24 +211,7 @@ setup-dev: install-dev
 check-model:
 	@echo "📊 モデル性能確認中..."
 	@if [ -d ".venv" ]; then \
-		.venv/bin/python -c "import joblib; import pandas as pd; import numpy as np; \
-		model = joblib.load('src/ml/models/trained/house_price_predictor_duckdb.pkl'); \
-		preprocessor = joblib.load('src/ml/models/trained/house_price_predictor_duckdb_encoders.pkl'); \
-		print('✅ モデル読み込み成功'); \
-		sample_data = pd.DataFrame({ \
-			'sqft': [2000], 'bedrooms': [3], 'bathrooms': [2.5], \
-			'house_age': [25], 'bed_bath_ratio': [1.2], \
-			'condition_score': [3], 'year_value': [1998], \
-			'location_name': ['Suburb'], 'location_type': ['Residential'], \
-			'condition_name': ['Good'], 'decade': ['1990s'], 'century': ['20th'] \
-		}); \
-		sample_data['log_sqft'] = np.log(sample_data['sqft']); \
-		sample_data['house_age_squared'] = sample_data['house_age'] ** 2; \
-		sample_data['total_rooms'] = sample_data['bedrooms'] + sample_data['bathrooms']; \
-		sample_data['sqft_per_bedroom'] = sample_data['sqft'] / (sample_data['bedrooms'] + 1); \
-		X_transformed = preprocessor.transform(sample_data); \
-		prediction = model.predict(X_transformed); \
-		print(f'📈 サンプル予測結果: $${prediction[0]:,.2f}')"; \
+		.venv/bin/python test_model.py; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
@@ -241,8 +224,8 @@ status:
 	@echo "📁 必要なファイル:"
 	@ls -la src/configs/model_config.yaml 2>/dev/null || echo "❌ src/configs/model_config.yaml が見つかりません"
 	@ls -la src/ml/data/raw/house_data.csv 2>/dev/null || echo "❌ src/ml/data/raw/house_data.csv が見つかりません"
-	@ls -la src/ml/models/trained/house_price_predictor_duckdb.pkl 2>/dev/null || echo "❌ 学習済みモデルが見つかりません"
-	@ls -la src/ml/models/trained/house_price_predictor_duckdb_encoders.pkl 2>/dev/null || echo "❌ 前処理器が見つかりません"
+	@ls -la src/ml/models/trained/house_price_prediction.pkl 2>/dev/null || echo "❌ 学習済みモデルが見つかりません"
+	@ls -la src/ml/models/trained/house_price_prediction_encoders.pkl 2>/dev/null || echo "❌ 前処理器が見つかりません"
 	@echo ""
 	@echo "🗄️ DWH状態:"
 	@ls -la src/ml/data/dwh/data/house_price_dwh.duckdb 2>/dev/null || echo "❌ DWHデータベースが見つかりません"
@@ -415,7 +398,7 @@ train-ensemble:
 			--config configs/app.yaml \
 			--duckdb-path src/data/dwh/data/house_price_dwh.duckdb \
 			--models-dir src/models \
-			--view-name v_house_analytics; \
+			--view-name bronze_raw_house_data; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
@@ -430,7 +413,7 @@ train-ensemble-voting:
 			--config configs/app.yaml \
 			--duckdb-path src/data/dwh/data/house_price_dwh.duckdb \
 			--models-dir src/models \
-			--view-name v_house_analytics \
+			--view-name bronze_raw_house_data \
 			--ensemble-type voting; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
@@ -446,7 +429,7 @@ train-ensemble-stacking:
 			--config configs/app.yaml \
 			--duckdb-path src/data/dwh/data/house_price_dwh.duckdb \
 			--models-dir src/models \
-			--view-name v_house_analytics \
+			--view-name bronze_raw_house_data \
 			--ensemble-type stacking; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
@@ -459,17 +442,19 @@ check-ensemble:
 	@echo "📊 アンサンブルモデル性能確認中..."
 	@if [ -d ".venv" ]; then \
 		.venv/bin/python -c "import joblib; import pandas as pd; import numpy as np; \
-		model = joblib.load('src/models/trained/house_price_ensemble.pkl'); \
-		preprocessor = joblib.load('src/models/trained/house_price_ensemble_preprocessor.pkl'); \
-		print('✅ アンサンブルモデル読み込み成功'); \
-		sample_data = pd.DataFrame({ \
-			'sqft': [2000], 'bedrooms': [3], 'bathrooms': [2.5], \
-			'house_age': [25], 'price_per_sqft': [200], 'bed_bath_ratio': [1.2], \
-			'location': ['Suburb'], 'condition': ['Good'] \
-		}); \
-		X_transformed = preprocessor.transform(sample_data); \
-		prediction = model.predict(X_transformed); \
-		print(f'📈 アンサンブル予測結果: $${prediction[0]:,.2f}')"; \
+model = joblib.load('src/ml/models/trained/house_price_ensemble_duckdb.pkl'); \
+preprocessor = joblib.load('src/ml/models/trained/house_price_ensemble_duckdb_preprocessor.pkl'); \
+print('✅ アンサンブルモデル読み込み成功'); \
+sample_data = pd.DataFrame({'sqft': [2000], 'bedrooms': [3], 'bathrooms': [2.5], 'year_built': [2000], 'location': ['Suburb'], 'condition': ['Good']}); \
+current_year = 2025; \
+sample_data['house_age'] = current_year - sample_data['year_built']; \
+sample_data['price_per_sqft'] = 200; \
+sample_data['bed_bath_ratio'] = sample_data['bedrooms'] / sample_data['bathrooms']; \
+X_transformed = preprocessor.transform(sample_data); \
+print(f'🔧 前処理後データ形状: {X_transformed.shape}'); \
+prediction = model.predict(X_transformed); \
+print('予測raw:', prediction); \
+print('📈 アンサンブル予測結果:', prediction[0] if len(prediction) > 0 else '予測値が空です');" ; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
