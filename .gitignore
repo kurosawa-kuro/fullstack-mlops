@@ -252,3 +252,5 @@ deployment/metabase/data/metabase.db.oldFile
 deployment/metabase/data/metabase.db.properties
 deployment/metabase/data/metabase.db.script
 deployment/metabase/data/metabase.db.script.backup
+deployment/metabase/data/metabase.db/metabase.db.mv.db
+deployment/metabase/data/metabase.db/metabase.db.trace.db
