@@ -29,23 +29,24 @@ print(f"sys.path after insertion: {sys.path[:3]}")
 # モジュールが存在するかチェック
 try:
     import ml
+
     print(f"ml module found at: {ml.__file__}")
 except ImportError as e:
     print(f"ml module import error: {e}")
 
 try:
-    from ml.data.dwh.core import (
-        DWHManager,
-        ingest_bronze_data,
-        validate_bronze_ingestion,
-    )
+    from ml.data.dwh.core import (DWHManager, ingest_bronze_data,
+                                  validate_bronze_ingestion)
+
     print("Successfully imported ml.data.dwh.core modules")
 except ImportError as e:
     print(f"ml.data.dwh.core import error: {e}")
     # 代替手段として相対インポートを試す
     try:
         from ..core.database import DWHManager
-        from ..core.ingestion import ingest_bronze_data, validate_bronze_ingestion
+        from ..core.ingestion import (ingest_bronze_data,
+                                      validate_bronze_ingestion)
+
         print("Successfully imported using relative imports")
     except ImportError as e2:
         print(f"Relative import also failed: {e2}")

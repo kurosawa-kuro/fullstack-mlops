@@ -13,4 +13,4 @@ __all__ = [
     "DWHManager",
     "ingest_bronze_data",
     "validate_bronze_ingestion",
-] 
+]

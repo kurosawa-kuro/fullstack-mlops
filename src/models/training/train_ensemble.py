@@ -5,21 +5,14 @@ import platform
 
 import duckdb
 import joblib
-import mlflow
-import mlflow.sklearn
 import numpy as np
 import pandas as pd
 import sklearn
 import xgboost as xgb
 import yaml
-from mlflow.tracking import MlflowClient
 from sklearn.compose import ColumnTransformer
-from sklearn.ensemble import (
-    GradientBoostingRegressor,
-    RandomForestRegressor,
-    StackingRegressor,
-    VotingRegressor,
-)
+from sklearn.ensemble import (GradientBoostingRegressor, RandomForestRegressor,
+                              StackingRegressor, VotingRegressor)
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
@@ -27,6 +20,9 @@ from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler
 
+import mlflow
+import mlflow.sklearn
+from mlflow.tracking import MlflowClient
 
 # Configure logging
 logging.basicConfig(

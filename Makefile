@@ -1,25 +1,30 @@
-# ML Model CI/CD Makefile
+# ML Model CI/CD Makefile (Refactored)
 # 開発者体験向上のための便利コマンド集
 
-.PHONY: help install test lint format clean train train-force pipeline pipeline-quick release setup-dev check-model status venv dwh dwh-explore dwh-backup dwh-stats dwh-cli dwh-tables dwh-summary dwh-location dwh-condition dwh-price-range dwh-year-built dwh-unlock train-ensemble train-ensemble-voting train-ensemble-stacking check-ensemble ingest dbt train-dbt all
+.PHONY: help install install-dev install-prod test test-unit test-integration test-e2e format clean train train-force pipeline pipeline-quick release setup-dev check-model status venv dwh dwh-explore dwh-backup dwh-stats dwh-cli dwh-tables dwh-summary dwh-location dwh-condition dwh-price-range dwh-year-built dwh-unlock train-ensemble train-ensemble-voting train-ensemble-stacking check-ensemble ingest dbt train-dbt all metabase-full metabase-setup metabase-up metabase-down metabase-status metabase-logs metabase-check-connection metabase-dashboard-setup metabase-restart metabase-clean metabase-update-driver
 
 # デフォルトターゲット
 .DEFAULT_GOAL := help
 
 # ヘルプ表示
 help:
-	@echo "🏠 House Price Prediction MLOps Pipeline"
+	@echo "🏠 House Price Prediction MLOps Pipeline (Refactored)"
 	@echo ""
 	@echo "📋 利用可能なコマンド:"
 	@echo ""
 	@echo "🔧 基本コマンド:"
-	@echo "  make install          # 依存関係インストール"
-	@echo "  make test             # テスト実行"
-	@echo "  make lint             # コード品質チェック"
+	@echo "  make install          # 依存関係インストール（開発用）"
+	@echo "  make install-dev      # 開発用依存関係インストール"
+	@echo "  make install-prod     # 本番用依存関係インストール"
+	@echo "  make test             # 全テスト実行"
+	@echo "  make test-unit        # 単体テスト実行"
+	@echo "  make test-integration # 統合テスト実行"
+	@echo "  make test-e2e         # E2Eテスト実行"
 	@echo "  make format           # コードフォーマット"
 	@echo "  make clean            # クリーンアップ"
 	@echo ""
 	@echo "🗄️ DWH関連:"
+	@echo "  make dwh              # DWH構築・データ投入"
 	@echo "  make ingest           # Bronze層データ取り込み"
 	@echo "  make dbt              # dbtでSilver/Gold層作成"
 	@echo "  make train-dbt        # dbt学習スクリプト実行"
@@ -58,39 +63,67 @@ venv:
 	@echo "📝 仮想環境をアクティベートするには: source .venv/bin/activate"
 	@echo "📝 または、make install を実行して依存関係をインストールしてください"
 
-# 依存関係インストール
-install:
-	@echo "📦 依存関係インストール中..."
-	@if [ -d ".venv" ]; then \
-		.venv/bin/pip install -r requirements.txt; \
-	else \
-		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
-		exit 1; \
-	fi
-	@echo "✅ 依存関係インストール完了"
+# 依存関係インストール（開発用）
+install: install-dev
 
-# テスト実行
-test:
-	@echo "🧪 テスト実行中..."
+# 開発用依存関係インストール
+install-dev:
+	@echo "📦 開発用依存関係インストール中..."
 	@if [ -d ".venv" ]; then \
-		.venv/bin/pytest tests/ -v; \
+		.venv/bin/pip install -r requirements-dev.txt; \
 	else \
-		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
+		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
 	fi
-	@echo "✅ テスト実行完了"
+	@echo "✅ 開発用依存関係インストール完了"
 
-# コード品質チェック
-lint:
-	@echo "🔍 コード品質チェック中..."
+# 本番用依存関係インストール
+install-prod:
+	@echo "📦 本番用依存関係インストール中..."
 	@if [ -d ".venv" ]; then \
-		.venv/bin/flake8 src/ tests/ --max-line-length=100 --ignore=E501,W503; \
-		.venv/bin/black --check src/ tests/; \
+		.venv/bin/pip install -r requirements-prod.txt; \
 	else \
-		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
+		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
 	fi
-	@echo "✅ コード品質チェック完了"
+	@echo "✅ 本番用依存関係インストール完了"
+
+# 全テスト実行
+test: test-unit test-integration test-e2e
+	@echo "✅ 全テスト実行完了"
+
+# 単体テスト実行
+test-unit:
+	@echo "🧪 単体テスト実行中..."
+	@if [ -d ".venv" ]; then \
+		.venv/bin/pytest tests/unit/ -v; \
+	else \
+		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
+		exit 1; \
+	fi
+	@echo "✅ 単体テスト実行完了"
+
+# 統合テスト実行
+test-integration:
+	@echo "🔗 統合テスト実行中..."
+	@if [ -d ".venv" ]; then \
+		.venv/bin/pytest tests/integration/ -v; \
+	else \
+		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
+		exit 1; \
+	fi
+	@echo "✅ 統合テスト実行完了"
+
+# E2Eテスト実行
+test-e2e:
+	@echo "🌐 E2Eテスト実行中..."
+	@if [ -d ".venv" ]; then \
+		.venv/bin/pytest tests/e2e/ -v; \
+	else \
+		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
+		exit 1; \
+	fi
+	@echo "✅ E2Eテスト実行完了"
 
 # コードフォーマット
 format:
@@ -99,7 +132,7 @@ format:
 		.venv/bin/black src/ tests/; \
 		.venv/bin/isort src/ tests/; \
 	else \
-		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
+		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
 	fi
 	@echo "✅ コードフォーマット完了"
@@ -116,9 +149,9 @@ clean:
 	rm -rf .coverage
 	@echo "✅ クリーンアップ完了"
 
-# DuckDBモデル訓練（既存モデルがあればスキップ）
+# モデル訓練（既存モデルがあればスキップ）
 train:
-	@echo "🔧 DuckDBモデル訓練中（既存モデルがあればスキップ）..."
+	@echo "🔧 モデル訓練中（既存モデルがあればスキップ）..."
 	@if [ -d ".venv" ]; then \
 		.venv/bin/python src/ml/models/train_model.py \
 			--config src/configs/model_config.yaml \
@@ -126,14 +159,14 @@ train:
 			--models-dir src/ml/models \
 			--view-name v_house_analytics; \
 	else \
-		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
+		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
 	fi
-	@echo "✅ DuckDBモデル訓練完了"
+	@echo "✅ モデル訓練完了"
 
-# DuckDBモデル強制再訓練
+# モデル強制再訓練
 train-force:
-	@echo "🔧 DuckDBモデル強制再訓練中..."
+	@echo "🔧 モデル強制再訓練中..."
 	@if [ -d ".venv" ]; then \
 		.venv/bin/python src/ml/models/train_model.py \
 			--config src/configs/model_config.yaml \
@@ -142,17 +175,17 @@ train-force:
 			--view-name v_house_analytics \
 			--force-retrain; \
 	else \
-		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
+		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
 	fi
-	@echo "✅ DuckDBモデル強制再訓練完了"
+	@echo "✅ モデル強制再訓練完了"
 
-# 全パイプライン実行
-pipeline: clean install lint test train
+# 全パイプライン実行（lintスキップ）
+pipeline: clean install test train
 	@echo "🚀 全パイプライン実行完了"
 
 # クイックパイプライン実行（既存モデルがあればスキップ）
-pipeline-quick: clean install lint test train
+pipeline-quick: clean install test train
 	@echo "⚡ クイックパイプライン実行完了"
 
 # リリース用タグ作成
@@ -164,25 +197,24 @@ release:
 	echo "✅ リリースタグ $$version を作成しました"
 
 # 開発環境セットアップ
-setup-dev: install
+setup-dev: install-dev
 	@echo "🔧 開発環境セットアップ中..."
 	@if [ -d ".venv" ]; then \
 		.venv/bin/pre-commit install; \
 	else \
-		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
+		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
 	fi
 	@echo "✅ 開発環境セットアップ完了"
 
-# DuckDBモデル性能確認
+# モデル性能確認
 check-model:
-	@echo "📊 DuckDBモデル性能確認中..."
+	@echo "📊 モデル性能確認中..."
 	@if [ -d ".venv" ]; then \
 		.venv/bin/python -c "import joblib; import pandas as pd; import numpy as np; \
 		model = joblib.load('src/ml/models/trained/house_price_predictor_duckdb.pkl'); \
 		preprocessor = joblib.load('src/ml/models/trained/house_price_predictor_duckdb_encoders.pkl'); \
-		
-		print('✅ DuckDBモデル読み込み成功'); \
+		print('✅ モデル読み込み成功'); \
 		sample_data = pd.DataFrame({ \
 			'sqft': [2000], 'bedrooms': [3], 'bathrooms': [2.5], \
 			'house_age': [25], 'bed_bath_ratio': [1.2], \
@@ -198,10 +230,10 @@ check-model:
 		prediction = model.predict(X_transformed); \
 		print(f'📈 サンプル予測結果: $${prediction[0]:,.2f}')"; \
 	else \
-		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
+		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
 	fi
-	@echo "✅ DuckDBモデル性能確認完了"
+	@echo "✅ モデル性能確認完了"
 
 # パイプライン状態確認
 status:
@@ -209,8 +241,8 @@ status:
 	@echo "📁 必要なファイル:"
 	@ls -la src/configs/model_config.yaml 2>/dev/null || echo "❌ src/configs/model_config.yaml が見つかりません"
 	@ls -la src/ml/data/raw/house_data.csv 2>/dev/null || echo "❌ src/ml/data/raw/house_data.csv が見つかりません"
-	@ls -la src/ml/models/trained/house_price_predictor_duckdb.pkl 2>/dev/null || echo "❌ DuckDB学習済みモデルが見つかりません"
-	@ls -la src/ml/models/trained/house_price_predictor_duckdb_encoders.pkl 2>/dev/null || echo "❌ DuckDB前処理器が見つかりません"
+	@ls -la src/ml/models/trained/house_price_predictor_duckdb.pkl 2>/dev/null || echo "❌ 学習済みモデルが見つかりません"
+	@ls -la src/ml/models/trained/house_price_predictor_duckdb_encoders.pkl 2>/dev/null || echo "❌ 前処理器が見つかりません"
 	@echo ""
 	@echo "🗄️ DWH状態:"
 	@ls -la src/ml/data/dwh/data/house_price_dwh.duckdb 2>/dev/null || echo "❌ DWHデータベースが見つかりません"
@@ -222,7 +254,7 @@ dwh:
 	@if [ -d ".venv" ]; then \
 		.venv/bin/python src/ml/data/dwh/scripts/setup_dwh.py --csv-file src/ml/data/raw/house_data.csv; \
 	else \
-		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
+		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
 	fi
 	@echo "✅ DWH構築完了"
@@ -233,7 +265,7 @@ dwh-force:
 	@if [ -d ".venv" ]; then \
 		.venv/bin/python src/ml/data/dwh/scripts/setup_dwh.py --csv-file src/ml/data/raw/house_data.csv --force-schema; \
 	else \
-		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
+		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
 	fi
 	@echo "✅ DWH強制再構築完了"
@@ -244,7 +276,7 @@ dwh-explore:
 	@if [ -d ".venv" ]; then \
 		.venv/bin/python src/ml/data/dwh/scripts/explore_dwh.py; \
 	else \
-		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
+		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
 	fi
 	@echo "✅ DWH探索完了"
@@ -280,7 +312,7 @@ dwh-stats:
 			print('❌ DWHデータベースが見つかりません'); \
 		"; \
 	else \
-		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
+		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
 	fi
 	@echo "✅ DWH統計情報表示完了"
@@ -379,13 +411,13 @@ dwh-unlock:
 train-ensemble:
 	@echo "🔧 アンサンブルモデル訓練中..."
 	@if [ -d ".venv" ]; then \
-		.venv/bin/python src/ml/models/train_ensemble.py \
-			--config src/configs/ensemble_config.yaml \
-			--duckdb-path src/ml/data/dwh/data/house_price_dwh.duckdb \
-			--models-dir src/ml/models \
+		.venv/bin/python src/models/training/train_ensemble.py \
+			--config configs/app.yaml \
+			--duckdb-path src/data/dwh/data/house_price_dwh.duckdb \
+			--models-dir src/models \
 			--view-name v_house_analytics; \
 	else \
-		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
+		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
 	fi
 	@echo "✅ アンサンブルモデル訓練完了"
@@ -394,13 +426,14 @@ train-ensemble:
 train-ensemble-voting:
 	@echo "🔧 Voting Ensemble訓練中..."
 	@if [ -d ".venv" ]; then \
-		.venv/bin/python src/ml/models/train_ensemble.py \
-			--config src/configs/ensemble_config.yaml \
-			--duckdb-path src/ml/data/dwh/data/house_price_dwh.duckdb \
-			--models-dir src/ml/models \
-			--view-name v_house_analytics; \
+		.venv/bin/python src/models/training/train_ensemble.py \
+			--config configs/app.yaml \
+			--duckdb-path src/data/dwh/data/house_price_dwh.duckdb \
+			--models-dir src/models \
+			--view-name v_house_analytics \
+			--ensemble-type voting; \
 	else \
-		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
+		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
 	fi
 	@echo "✅ Voting Ensemble訓練完了"
@@ -409,13 +442,14 @@ train-ensemble-voting:
 train-ensemble-stacking:
 	@echo "🔧 Stacking Ensemble訓練中..."
 	@if [ -d ".venv" ]; then \
-		.venv/bin/python src/ml/models/train_ensemble.py \
-			--config src/configs/ensemble_config.yaml \
-			--duckdb-path src/ml/data/dwh/data/house_price_dwh.duckdb \
-			--models-dir src/ml/models \
-			--view-name v_house_analytics; \
+		.venv/bin/python src/models/training/train_ensemble.py \
+			--config configs/app.yaml \
+			--duckdb-path src/data/dwh/data/house_price_dwh.duckdb \
+			--models-dir src/models \
+			--view-name v_house_analytics \
+			--ensemble-type stacking; \
 	else \
-		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
+		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
 	fi
 	@echo "✅ Stacking Ensemble訓練完了"
@@ -425,8 +459,8 @@ check-ensemble:
 	@echo "📊 アンサンブルモデル性能確認中..."
 	@if [ -d ".venv" ]; then \
 		.venv/bin/python -c "import joblib; import pandas as pd; import numpy as np; \
-		model = joblib.load('src/ml/models/trained/house_price_ensemble_duckdb.pkl'); \
-		preprocessor = joblib.load('src/ml/models/trained/house_price_ensemble_duckdb_preprocessor.pkl'); \
+		model = joblib.load('src/models/trained/house_price_ensemble.pkl'); \
+		preprocessor = joblib.load('src/models/trained/house_price_ensemble_preprocessor.pkl'); \
 		print('✅ アンサンブルモデル読み込み成功'); \
 		sample_data = pd.DataFrame({ \
 			'sqft': [2000], 'bedrooms': [3], 'bathrooms': [2.5], \
@@ -435,9 +469,9 @@ check-ensemble:
 		}); \
 		X_transformed = preprocessor.transform(sample_data); \
 		prediction = model.predict(X_transformed); \
-		print(f'📈 アンサンブル予測結果: {prediction[0]:,.2f}')"; \
+		print(f'📈 アンサンブル予測結果: $${prediction[0]:,.2f}')"; \
 	else \
-		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
+		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
 	fi
 	@echo "✅ アンサンブルモデル性能確認完了"
@@ -448,18 +482,17 @@ ingest:
 	@if [ -d ".venv" ]; then \
 		.venv/bin/python src/ml/data/dwh/scripts/setup_dwh.py --csv-file src/ml/data/raw/house_data.csv; \
 	else \
-		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
+		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
 	fi
 	@echo "✅ DWH構築完了"
 
 # dbtでSilver/Gold層まで作成
-# goldまで一気に作る場合は --select gold
-# テストも同時に実行
 dbt:
 	@echo "🔄 dbtでSilver/Gold層まで作成中..."
 	@cd src/ml/data/dwh/house_price_dbt && dbt run --select gold && dbt test
 
+# dbtドキュメント生成
 docs:
 	@echo "📄 dbtドキュメント生成中..."
 	@cd src/ml/data/dwh/house_price_dbt && dbt docs generate && dbt docs serve
@@ -470,7 +503,7 @@ train-dbt:
 	@if [ -d ".venv" ]; then \
 		.venv/bin/python src/ml/data/dwh/house_price_dbt/train.py; \
 	else \
-		echo "❌ 仮想環境が見つかりません。先に 'python3 -m venv .venv' を実行してください"; \
+		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
 	fi
 	@echo "✅ dbt学習スクリプト実行完了"

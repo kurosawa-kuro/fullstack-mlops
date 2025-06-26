@@ -6,7 +6,7 @@ This module contains configuration settings for the data warehouse.
 
 import os
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict
 
 # Base paths
 DWH_BASE_PATH = Path(__file__).parent.parent
@@ -53,11 +53,13 @@ LOGGING_CONFIG = {
     "file": "dwh.log",
 }
 
+
 def get_db_path(db_name: str = None) -> Path:
     """Get database file path"""
     if db_name is None:
         db_name = DEFAULT_DB_NAME
     return DATA_PATH / db_name
+
 
 def get_config() -> Dict[str, Any]:
     """Get complete configuration"""
@@ -70,4 +72,4 @@ def get_config() -> Dict[str, Any]:
         "ingestion": INGESTION_SETTINGS,
         "validation": VALIDATION_SETTINGS,
         "logging": LOGGING_CONFIG,
-    } 
+    }

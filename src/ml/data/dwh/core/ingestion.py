@@ -23,11 +23,11 @@ def ingest_bronze_data(
 ) -> Dict[str, Any]:
     """
     Ingest raw data from CSV file into Bronze layer only
-    
+
     Args:
         csv_file_path: Path to the CSV file containing house data
         dwh_manager: Optional DWHManager instance. If None, creates a new one.
-    
+
     Returns:
         Dictionary with ingestion results and statistics
     """
@@ -68,7 +68,7 @@ def ingest_bronze_data(
 
 def _create_bronze_table(dwh_manager: DWHManager) -> None:
     """Create Bronze layer table if it doesn't exist"""
-    
+
     bronze_table_sql = """
     CREATE TABLE IF NOT EXISTS bronze_raw_house_data (
         id INTEGER PRIMARY KEY,
@@ -82,7 +82,7 @@ def _create_bronze_table(dwh_manager: DWHManager) -> None:
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     """
-    
+
     dwh_manager.execute_script(bronze_table_sql)
     logger.info("Bronze table created/verified")
 
@@ -90,11 +90,11 @@ def _create_bronze_table(dwh_manager: DWHManager) -> None:
 def _ingest_bronze_data(df: pd.DataFrame, dwh_manager: DWHManager) -> Dict[str, Any]:
     """
     Ingest raw data into Bronze layer table
-    
+
     Args:
         df: DataFrame with raw house data
         dwh_manager: DWHManager instance
-    
+
     Returns:
         Dictionary with ingestion statistics
     """
@@ -152,13 +152,15 @@ def _ingest_bronze_data(df: pd.DataFrame, dwh_manager: DWHManager) -> Dict[str, 
         raise
 
 
-def validate_bronze_ingestion(dwh_manager: Optional[DWHManager] = None) -> Dict[str, Any]:
+def validate_bronze_ingestion(
+    dwh_manager: Optional[DWHManager] = None,
+) -> Dict[str, Any]:
     """
     Validate the Bronze layer data ingestion
-    
+
     Args:
         dwh_manager: Optional DWHManager instance. If None, creates a new one.
-    
+
     Returns:
         Dictionary with validation results
     """

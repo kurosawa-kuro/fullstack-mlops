@@ -4,14 +4,11 @@ import platform  # プラットフォーム情報を取得するモジュール
 
 import duckdb  # DuckDBライブラリ
 import joblib  # モデルの保存・読み込みライブラリ
-import mlflow  # MLflowのメインモジュール
-import mlflow.sklearn  # scikit-learnモデル用のMLflowモジュール
 import numpy as np  # 数値計算ライブラリ
 import pandas as pd  # データ分析ライブラリ
 import sklearn  # scikit-learnライブラリ
 import xgboost as xgb  # XGBoostライブラリ
 import yaml  # YAMLファイル読み込みライブラリ
-from mlflow.tracking import MlflowClient  # MLflowクライアント
 from sklearn.compose import ColumnTransformer  # 列別の変換器を組み合わせるクラス
 from sklearn.ensemble import GradientBoostingRegressor  # アンサンブル学習アルゴリズム
 from sklearn.ensemble import RandomForestRegressor
@@ -22,6 +19,10 @@ from sklearn.model_selection import train_test_split  # データ分割機能
 from sklearn.pipeline import Pipeline  # パイプライン構築のためのクラス
 from sklearn.preprocessing import LabelEncoder  # ラベルエンコーダー
 from sklearn.preprocessing import OneHotEncoder, StandardScaler  # 前処理クラス
+
+import mlflow  # MLflowのメインモジュール
+import mlflow.sklearn  # scikit-learnモデル用のMLflowモジュール
+from mlflow.tracking import MlflowClient  # MLflowクライアント
 
 # -----------------------------
 # Configure logging

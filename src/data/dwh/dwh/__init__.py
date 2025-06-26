@@ -17,11 +17,7 @@ __version__ = "1.0.0"
 __author__ = "MLOps Team"
 
 # Import core functionality
-from .core import (
-    DWHManager,
-    ingest_bronze_data,
-    validate_bronze_ingestion,
-)
+from .core import DWHManager, ingest_bronze_data, validate_bronze_ingestion
 
 __all__ = [
     "DWHManager",
