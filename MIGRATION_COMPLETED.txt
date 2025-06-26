@@ -1,2 +1,0 @@
-Migration completed successfully
-Timestamp: /home/wsl/dev/mlops/fullstack-mlops

@@ -70,7 +70,7 @@ install: install-dev
 install-dev:
 	@echo "📦 開発用依存関係インストール中..."
 	@if [ -d ".venv" ]; then \
-		.venv/bin/pip install -r requirements-dev.txt; \
+		.venv/bin/pip install -r configs/requirements-dev.txt; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
@@ -81,7 +81,7 @@ install-dev:
 install-prod:
 	@echo "📦 本番用依存関係インストール中..."
 	@if [ -d ".venv" ]; then \
-		.venv/bin/pip install -r requirements-prod.txt; \
+		.venv/bin/pip install -r configs/requirements-prod.txt; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
@@ -510,31 +510,31 @@ metabase-setup:
 # Metabase起動
 metabase-up:
 	@echo "🚀 Metabase起動中..."
-	@docker-compose up -d metabase
+	@docker-compose -f deployment/docker/docker-compose.yaml up -d metabase
 	@echo "✅ Metabase起動完了"
 	@echo "🌐 アクセスURL: http://localhost:3000"
 
 # Metabase停止
 metabase-down:
 	@echo "🛑 Metabase停止中..."
-	@docker-compose stop metabase
+	@docker-compose -f deployment/docker/docker-compose.yaml stop metabase
 	@echo "✅ Metabase停止完了"
 
 # Metabase再起動
 metabase-restart:
 	@echo "🔄 Metabase再起動中..."
-	@docker-compose restart metabase
+	@docker-compose -f deployment/docker/docker-compose.yaml restart metabase
 	@echo "✅ Metabase再起動完了"
 
 # Metabaseログ確認
 metabase-logs:
 	@echo "📋 Metabaseログ表示中..."
-	@docker-compose logs -f metabase
+	@docker-compose -f deployment/docker/docker-compose.yaml logs -f metabase
 
 # Metabase状態確認
 metabase-status:
 	@echo "📊 Metabase状態確認中..."
-	@docker-compose ps metabase
+	@docker-compose -f deployment/docker/docker-compose.yaml ps metabase
 	@echo ""
 	@echo "🔍 ヘルスチェック:"
 	@curl -s http://localhost:3000/api/health || echo "❌ Metabaseに接続できません"
@@ -587,7 +587,7 @@ metabase-full: metabase-setup metabase-up
 # Metabaseクリーンアップ
 metabase-clean:
 	@echo "🧹 Metabaseクリーンアップ中..."
-	@docker-compose down metabase
+	@docker-compose -f deployment/docker/docker-compose.yaml down metabase
 	@rm -rf deployment/metabase/data/*
 	@rm -rf deployment/metabase/plugins/*
 	@echo "✅ Metabaseクリーンアップ完了"

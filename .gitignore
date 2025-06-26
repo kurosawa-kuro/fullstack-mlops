@@ -218,7 +218,7 @@ htmlcov/
 
 # Logs
 *.log
-logs/
+deployment/logs/
 
 # Docker
 .dockerignore
@@ -255,3 +255,10 @@ deployment/metabase/data/metabase.db.script
 deployment/metabase/data/metabase.db.script.backup
 deployment/metabase/data/metabase.db/metabase.db.mv.db
 deployment/metabase/data/metabase.db/metabase.db.trace.db
+
+# Configuration files (moved to configs/)
+configs/.env
+configs/.env.local
+configs/.env.development
+configs/.env.test
+configs/.env.production
