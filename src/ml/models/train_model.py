@@ -178,16 +178,16 @@ def preprocess_data(data, target_variable):
     """
     データを前処理して機械学習用に準備
     """
-    logger.info("Preprocessing data for machine learning (bronze_raw_house_data互換)")
+    logger.info("Preprocessing data for machine learning (v_house_analytics互換)")
     # 必要なカラムのみ抽出
     X = pd.DataFrame()
     X["sqft"] = data["sqft"]
     X["bedrooms"] = data["bedrooms"]
     X["bathrooms"] = data["bathrooms"]
     
-    # year_builtからhouse_ageを計算
+    # year_valueからhouse_ageを計算（v_house_analyticsビューではyear_value）
     current_year = 2025
-    X["house_age"] = current_year - data["year_built"]
+    X["house_age"] = current_year - data["year_value"]
     
     X["price_per_sqft"] = data["price"] / data["sqft"]
     X["bed_bath_ratio"] = data["bedrooms"] / data["bathrooms"]
@@ -195,9 +195,9 @@ def preprocess_data(data, target_variable):
         X["bed_bath_ratio"].replace([np.inf, -np.inf], np.nan).fillna(0)
     )
     
-    # 実際のカラム名を使用
-    X["location"] = data["location"]
-    X["condition"] = data["condition"]
+    # v_house_analyticsビューの正しいカラム名を使用
+    X["location"] = data["location_name"]
+    X["condition"] = data["condition_name"]
     
     y = data[target_variable]
     preprocessor = create_preprocessor()

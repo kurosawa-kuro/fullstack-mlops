@@ -1,4 +1,4 @@
-metabase対応
+metabase対応 → Done
 CI修正
 
 dbt 対応のCI修正

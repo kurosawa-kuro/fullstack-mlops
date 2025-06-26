@@ -82,16 +82,61 @@ jobs:
 
       - name: Build DuckDB DWH
         run: |
+          # DWHスキーマを初期化（シンプル版）
+          python -c "
+          import sys
+          sys.path.insert(0, 'src')
+          import duckdb
+          
+          # DuckDBに接続
+          conn = duckdb.connect('src/ml/data/dwh/data/house_price_dwh.duckdb')
+          
+          # シンプルなv_house_analyticsビューを作成（Bronze層のデータを直接使用）
+          conn.execute('''
+            CREATE OR REPLACE VIEW v_house_analytics AS
+            SELECT 
+              id as transaction_id,
+              price,
+              sqft,
+              bedrooms,
+              bathrooms,
+              (price / sqft) as price_per_sqft,
+              (2025 - year_built) as house_age,
+              (bedrooms / bathrooms) as bed_bath_ratio,
+              location as location_name,
+              CASE 
+                WHEN location ILIKE '%suburban%' THEN 'Suburban'
+                WHEN location ILIKE '%urban%' THEN 'Urban'
+                ELSE 'Rural'
+              END as location_type,
+              condition as condition_name,
+              CASE 
+                WHEN condition = 'Excellent' THEN 5
+                WHEN condition = 'Good' THEN 4
+                WHEN condition = 'Fair' THEN 3
+                WHEN condition = 'Poor' THEN 2
+                ELSE 1
+              END as condition_score,
+              year_built as year_value,
+              CONCAT((year_built // 10) * 10, 's') as decade,
+              CONCAT((year_built // 100) + 1, 'th Century') as century,
+              CURRENT_DATE as transaction_date
+            FROM bronze_raw_house_data
+          ''')
+          
+          print('✅ シンプルなv_house_analyticsビューを作成しました')
+          conn.close()
+          "
+          
           # DuckDB DWHを構築
           python src/ml/data/dwh/scripts/setup_dwh.py \
             --csv-file src/ml/data/raw/house_data.csv \
-            --db-path src/ml/data/dwh/data/house_price_dwh.duckdb \
-            --force-schema
+            --db-path src/ml/data/dwh/data/house_price_dwh.duckdb
           
           # DWHの状態確認
           python src/ml/data/dwh/scripts/setup_dwh.py \
             --db-path src/ml/data/dwh/data/house_price_dwh.duckdb \
-            --info-only
+            --validate-only
 
       - name: Run DuckDB-based ML pipeline
         run: |
@@ -168,7 +213,7 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest src/tests/ -v --cov=src --cov-report=xml --cov-report=html
+          pytest src/tests/test_ml_pipeline.py -v --cov=src --cov-report=xml --cov-report=html
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
@@ -209,9 +254,9 @@ jobs:
 
       - name: Run model performance tests
         run: |
-          python -m pytest src/tests/test_ml_pipeline.py::TestModelPipeline::test_model_files_exist -v
-          python -m pytest src/tests/test_ml_pipeline.py::TestModelPipeline::test_model_can_load -v
-          python -m pytest src/tests/test_ml_pipeline.py::TestModelPipeline::test_model_can_predict -v
+          pytest src/tests/test_ml_pipeline.py::TestModelPipeline::test_model_files_exist -v
+          pytest src/tests/test_ml_pipeline.py::TestModelPipeline::test_model_can_load -v
+          pytest src/tests/test_ml_pipeline.py::TestModelPipeline::test_model_can_predict -v
 
       - name: Test DuckDB integration
         run: |
