@@ -8,48 +8,47 @@
 
 # ヘルプ表示
 help:
-	@echo "🏠 House Price Prediction MLOps Pipeline (Refactored)"
+	@echo "🏠 House Price Prediction MLOps Pipeline"
 	@echo ""
 	@echo "📋 利用可能なコマンド:"
 	@echo ""
 	@echo "🔧 基本コマンド:"
-	@echo "  make install          # 依存関係インストール（開発用）"
-	@echo "  make install-dev      # 開発用依存関係インストール"
-	@echo "  make install-prod     # 本番用依存関係インストール"
-	@echo "  make test             # 全テスト実行"
-	@echo "  make test-unit        # 単体テスト実行"
-	@echo "  make test-integration # 統合テスト実行"
-	@echo "  make test-e2e         # E2Eテスト実行"
-	@echo "  make format           # コードフォーマット"
-	@echo "  make clean            # クリーンアップ"
+	@echo "  make deps-dev                # 開発用依存関係インストール"
+	@echo "  make deps-prod               # 本番用依存関係インストール"
+	@echo "  make test-unit               # 単体テスト"
+	@echo "  make test-integ              # 統合テスト"
+	@echo "  make test-e2e                # E2Eテスト"
+	@echo "  make format                  # コードフォーマット"
+	@echo "  make clean                   # クリーンアップ"
 	@echo ""
 	@echo "🗄️ DWH関連:"
-	@echo "  make dwh              # DWH構築・データ投入"
-	@echo "  make ingest           # Bronze層データ取り込み"
-	@echo "  make dbt              # dbtでSilver/Gold層作成"
-	@echo "  make train-dbt        # dbt学習スクリプト実行"
-	@echo "  make all              # 一括実行（ingest + dbt + train-dbt）"
+	@echo "  make dwh-bronze              # Bronze層データ取り込み"
+	@echo "  make dwh-explore             # DWHデータ探索"
+	@echo "  make dwh-stats               # DWH統計情報"
+	@echo "  make dwh-tables              # DWHテーブル一覧"
+	@echo "  make dwh-cli                 # DuckDB CLI起動"
+	@echo "  make dwh-unlock              # DWHロック解除"
 	@echo ""
-	@echo "📊 分析・確認:"
-	@echo "  make dwh-explore      # DWHデータ探索"
-	@echo "  make dwh-stats        # DWH統計情報"
-	@echo "  make dwh-tables       # DWHテーブル一覧"
-	@echo "  make status           # パイプライン状態確認"
+	@echo "🛠️ dbt関連:"
+	@echo "  make dbt-run                 # dbtでSilver/Gold層作成"
+	@echo "  make dbt-train               # dbt学習スクリプト実行"
+	@echo "  make dbt-docs                # dbtドキュメント生成"
 	@echo ""
-	@echo "🔧 開発・デバッグ:"
-	@echo "  make setup-dev        # 開発環境セットアップ"
-	@echo "  make dwh-cli          # DuckDB CLI起動"
-	@echo "  make dwh-unlock       # DWHロック解除"
+	@echo "🚀 パイプライン:"
+	@echo "  make pipeline-all            # 一括実行（全パイプライン）"
+	@echo "  make pipeline-quick          # クイックパイプライン"
 	@echo ""
 	@echo "📊 Metabase BI統合:"
-	@echo "  make metabase-full    # Metabase完全セットアップ"
-	@echo "  make metabase-setup   # Metabaseセットアップ"
-	@echo "  make metabase-up      # Metabase起動"
-	@echo "  make metabase-down    # Metabase停止"
-	@echo "  make metabase-status  # Metabase状態確認"
-	@echo "  make metabase-logs    # Metabaseログ確認"
-	@echo "  make metabase-check-connection  # 接続確認"
-	@echo "  make metabase-dashboard-setup   # ダッシュボード作成支援"
+	@echo "  make metabase-setup          # Metabaseセットアップ"
+	@echo "  make metabase-up             # Metabase起動"
+	@echo "  make metabase-down           # Metabase停止"
+	@echo "  make metabase-status         # Metabase状態確認"
+	@echo "  make metabase-logs           # Metabaseログ確認"
+	@echo "  make metabase-check          # Metabase接続確認"
+	@echo "  make metabase-dashboard      # ダッシュボード作成支援"
+	@echo ""
+	@echo "🔧 開発:"
+	@echo "  make dev-setup               # 開発環境セットアップ"
 
 # 仮想環境セットアップ
 venv:
@@ -63,25 +62,21 @@ venv:
 	@echo "📝 仮想環境をアクティベートするには: source .venv/bin/activate"
 	@echo "📝 または、make install を実行して依存関係をインストールしてください"
 
-# 依存関係インストール（開発用）
-install: install-dev
-
-# 開発用依存関係インストール
-install-dev:
+# 依存関係インストール
+deps-dev:
 	@echo "📦 開発用依存関係インストール中..."
 	@if [ -d ".venv" ]; then \
-		.venv/bin/pip install -r requirements-dev.txt; \
+		.venv/bin/pip install -r configs/requirements-dev.txt; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
 	fi
 	@echo "✅ 開発用依存関係インストール完了"
 
-# 本番用依存関係インストール
-install-prod:
+deps-prod:
 	@echo "📦 本番用依存関係インストール中..."
 	@if [ -d ".venv" ]; then \
-		.venv/bin/pip install -r requirements-prod.txt; \
+		.venv/bin/pip install -r configs/requirements-prod.txt; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
@@ -89,7 +84,7 @@ install-prod:
 	@echo "✅ 本番用依存関係インストール完了"
 
 # 全テスト実行
-test: test-unit test-integration test-e2e
+test: test-unit test-integ test-e2e
 	@echo "✅ 全テスト実行完了"
 
 # 単体テスト実行
@@ -104,7 +99,7 @@ test-unit:
 	@echo "✅ 単体テスト実行完了"
 
 # 統合テスト実行
-test-integration:
+test-integ:
 	@echo "🔗 統合テスト実行中..."
 	@if [ -d ".venv" ]; then \
 		.venv/bin/pytest tests/integration/ -v; \
@@ -184,6 +179,10 @@ train-force:
 pipeline: clean install test train
 	@echo "🚀 全パイプライン実行完了"
 
+# 一括実行（全パイプライン）
+pipeline-all: clean deps-dev test dwh-bronze dbt train-dbt
+	@echo "🚀 一括実行（全パイプライン）完了"
+
 # クイックパイプライン実行（既存モデルがあればスキップ）
 pipeline-quick: clean install test train
 	@echo "⚡ クイックパイプライン実行完了"
@@ -197,7 +196,7 @@ release:
 	echo "✅ リリースタグ $$version を作成しました"
 
 # 開発環境セットアップ
-setup-dev: install-dev
+setup-dev: dev-setup
 	@echo "🔧 開発環境セットアップ中..."
 	@if [ -d ".venv" ]; then \
 		.venv/bin/pre-commit install; \
@@ -232,26 +231,15 @@ status:
 	@echo "✅ 状態確認完了"
 
 # DWH構築とデータインジェスション
-dwh:
-	@echo "🗄️ DWH構築とデータインジェスション中..."
+dwh-bronze:
+	@echo "🗄️ DWH Bronze層データ取り込み中..."
 	@if [ -d ".venv" ]; then \
 		.venv/bin/python src/ml/data/dwh/scripts/setup_dwh.py --csv-file src/ml/data/raw/house_data.csv; \
 	else \
 		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
 		exit 1; \
 	fi
-	@echo "✅ DWH構築完了"
-
-# DWH強制再構築
-dwh-force:
-	@echo "🗄️ DWH強制再構築中..."
-	@if [ -d ".venv" ]; then \
-		.venv/bin/python src/ml/data/dwh/scripts/setup_dwh.py --csv-file src/ml/data/raw/house_data.csv --force-schema; \
-	else \
-		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
-		exit 1; \
-	fi
-	@echo "✅ DWH強制再構築完了"
+	@echo "✅ DWH Bronze層データ取り込み完了"
 
 # DWHデータの探索・分析
 dwh-explore:
@@ -274,7 +262,7 @@ dwh-backup:
 		echo "✅ バックアップ完了: house_price_dwh_$$DATE.duckdb"; \
 		ls -lh src/ml/data/dwh/data/backups/house_price_dwh_$$DATE.duckdb; \
 	else \
-		echo "❌ DWHデータベースが見つかりません。先に 'make dwh' を実行してください"; \
+		echo "❌ DWHデータベースが見つかりません。先に 'make dwh-bronze' を実行してください"; \
 		exit 1; \
 	fi
 
@@ -312,7 +300,7 @@ dwh-cli:
 		echo ""; \
 		duckdb src/ml/data/dwh/data/house_price_dwh.duckdb; \
 	else \
-		echo "❌ DWHデータベースが見つかりません。先に 'make dwh' を実行してください"; \
+		echo "❌ DWHデータベースが見つかりません。先に 'make dwh-bronze' を実行してください"; \
 		exit 1; \
 	fi
 
@@ -322,7 +310,7 @@ dwh-tables:
 	@if [ -f "src/ml/data/dwh/data/house_price_dwh.duckdb" ]; then \
 		duckdb src/ml/data/dwh/data/house_price_dwh.duckdb ".tables"; \
 	else \
-		echo "❌ DWHデータベースが見つかりません。先に 'make dwh' を実行してください"; \
+		echo "❌ DWHデータベースが見つかりません。先に 'make dwh-bronze' を実行してください"; \
 		exit 1; \
 	fi
 
@@ -332,7 +320,7 @@ dwh-summary:
 	@if [ -f "src/ml/data/dwh/data/house_price_dwh.duckdb" ]; then \
 		duckdb src/ml/data/dwh/data/house_price_dwh.duckdb "SELECT * FROM v_summary_statistics;"; \
 	else \
-		echo "❌ DWHデータベースが見つかりません。先に 'make dwh' を実行してください"; \
+		echo "❌ DWHデータベースが見つかりません。先に 'make dwh-bronze' を実行してください"; \
 		exit 1; \
 	fi
 
@@ -342,7 +330,7 @@ dwh-location:
 	@if [ -f "src/ml/data/dwh/data/house_price_dwh.duckdb" ]; then \
 		duckdb src/ml/data/dwh/data/house_price_dwh.duckdb "SELECT * FROM v_location_analytics ORDER BY avg_price DESC;"; \
 	else \
-		echo "❌ DWHデータベースが見つかりません。先に 'make dwh' を実行してください"; \
+		echo "❌ DWHデータベースが見つかりません。先に 'make dwh-bronze' を実行してください"; \
 		exit 1; \
 	fi
 
@@ -352,7 +340,7 @@ dwh-condition:
 	@if [ -f "src/ml/data/dwh/data/house_price_dwh.duckdb" ]; then \
 		duckdb src/ml/data/dwh/data/house_price_dwh.duckdb "SELECT * FROM v_condition_analytics ORDER BY avg_price DESC;"; \
 	else \
-		echo "❌ DWHデータベースが見つかりません。先に 'make dwh' を実行してください"; \
+		echo "❌ DWHデータベースが見つかりません。先に 'make dwh-bronze' を実行してください"; \
 		exit 1; \
 	fi
 
@@ -362,7 +350,7 @@ dwh-price-range:
 	@if [ -f "src/ml/data/dwh/data/house_price_dwh.duckdb" ]; then \
 		duckdb src/ml/data/dwh/data/house_price_dwh.duckdb "SELECT CASE WHEN price < 300000 THEN 'Under $300k' WHEN price < 500000 THEN '$300k-$500k' WHEN price < 800000 THEN '$500k-$800k' ELSE 'Over $800k' END as price_range, COUNT(*) as house_count, AVG(price) as avg_price FROM fact_house_transactions GROUP BY price_range ORDER BY MIN(price);"; \
 	else \
-		echo "❌ DWHデータベースが見つかりません。先に 'make dwh' を実行してください"; \
+		echo "❌ DWHデータベースが見つかりません。先に 'make dwh-bronze' を実行してください"; \
 		exit 1; \
 	fi
 
@@ -472,15 +460,26 @@ ingest:
 	fi
 	@echo "✅ DWH構築完了"
 
-# dbtでSilver/Gold層まで作成
+# dbtで全層（Bronze/Silver/Gold）作成
 dbt:
-	@echo "🔄 dbtでSilver/Gold層まで作成中..."
-	@cd src/ml/data/dwh/house_price_dbt && dbt run --select gold && dbt test
+	@echo "🔄 dbtで全層（Bronze/Silver/Gold）作成中..."
+	@if [ -d ".venv" ]; then \
+		.venv/bin/dbt run --project-dir src/ml/data/dwh/house_price_dbt && \
+		.venv/bin/dbt test --project-dir src/ml/data/dwh/house_price_dbt; \
+	else \
+		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
+		exit 1; \
+	fi
 
 # dbtドキュメント生成
 docs:
 	@echo "📄 dbtドキュメント生成中..."
-	@cd src/ml/data/dwh/house_price_dbt && dbt docs generate && dbt docs serve
+	@if [ -d ".venv" ]; then \
+		cd src/ml/data/dwh/house_price_dbt && ../../../.venv/bin/dbt docs generate && ../../../.venv/bin/dbt docs serve; \
+	else \
+		echo "❌ 仮想環境が見つかりません。先に 'make venv' を実行してください"; \
+		exit 1; \
+	fi
 
 # dbt学習スクリプト実行
 train-dbt:
@@ -510,31 +509,31 @@ metabase-setup:
 # Metabase起動
 metabase-up:
 	@echo "🚀 Metabase起動中..."
-	@docker-compose up -d metabase
+	@docker-compose -f deployment/docker/docker-compose.yaml up -d metabase
 	@echo "✅ Metabase起動完了"
 	@echo "🌐 アクセスURL: http://localhost:3000"
 
 # Metabase停止
 metabase-down:
 	@echo "🛑 Metabase停止中..."
-	@docker-compose stop metabase
+	@docker-compose -f deployment/docker/docker-compose.yaml stop metabase
 	@echo "✅ Metabase停止完了"
 
 # Metabase再起動
 metabase-restart:
 	@echo "🔄 Metabase再起動中..."
-	@docker-compose restart metabase
+	@docker-compose -f deployment/docker/docker-compose.yaml restart metabase
 	@echo "✅ Metabase再起動完了"
 
 # Metabaseログ確認
 metabase-logs:
 	@echo "📋 Metabaseログ表示中..."
-	@docker-compose logs -f metabase
+	@docker-compose -f deployment/docker/docker-compose.yaml logs -f metabase
 
 # Metabase状態確認
 metabase-status:
 	@echo "📊 Metabase状態確認中..."
-	@docker-compose ps metabase
+	@docker-compose -f deployment/docker/docker-compose.yaml ps metabase
 	@echo ""
 	@echo "🔍 ヘルスチェック:"
 	@curl -s http://localhost:3000/api/health || echo "❌ Metabaseに接続できません"
@@ -587,7 +586,7 @@ metabase-full: metabase-setup metabase-up
 # Metabaseクリーンアップ
 metabase-clean:
 	@echo "🧹 Metabaseクリーンアップ中..."
-	@docker-compose down metabase
+	@docker-compose -f deployment/docker/docker-compose.yaml down metabase
 	@rm -rf deployment/metabase/data/*
 	@rm -rf deployment/metabase/plugins/*
 	@echo "✅ Metabaseクリーンアップ完了"

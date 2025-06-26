@@ -4,22 +4,59 @@ on:
   push:
     paths:
       - 'src/**'
-      - 'src/configs/**'
+      - 'configs/**'
       - 'src/ml/data/**'
       - 'src/ml/dwh/**'
-      - 'src/tests/**'
-      - 'requirements.txt'
+      - 'tests/**'
+      - 'configs/requirements.txt'
       - '.github/workflows/ml-cicd.yml'
   pull_request:
     paths:
       - 'src/**'
-      - 'src/configs/**'
+      - 'configs/**'
       - 'src/ml/data/**'
       - 'src/ml/dwh/**'
-      - 'src/tests/**'
-      - 'requirements.txt'
+      - 'tests/**'
+      - 'configs/requirements.txt'
       - '.github/workflows/ml-cicd.yml'
   workflow_dispatch:  # 手動実行可能
+
+env:
+  # アプリケーション設定
+  APP_NAME: "House Price Predictor"
+  APP_VERSION: "1.0.0"
+  APP_ENVIRONMENT: "ci"
+  
+  # データベース設定
+  DB_TYPE: "duckdb"
+  DB_PATH: "src/ml/data/dwh/data/house_price_dwh.duckdb"
+  
+  # MLflow設定（CI/CD環境ではローカルファイルシステムを使用）
+  MLFLOW_TRACKING_URI: "file:./mlruns"
+  MLFLOW_EXPERIMENT_NAME: "house_price_prediction"
+  MLFLOW_DISABLE_TRACKING: "false"
+  
+  # ログ設定
+  LOG_LEVEL: "INFO"
+  LOG_FORMAT: "json"
+  LOG_FILE: "logs/app.log"
+  
+  # API設定
+  API_HOST: "0.0.0.0"
+  API_PORT: "8000"
+  API_WORKERS: "4"
+  
+  # UI設定
+  UI_HOST: "0.0.0.0"
+  UI_PORT: "8501"
+  
+  # 監視設定
+  MONITORING_ENABLED: "true"
+  METRICS_PORT: "9090"
+  
+  # セキュリティ設定
+  SECRET_KEY: "ci-secret-key-for-testing"
+  DEBUG: "false"
 
 jobs:
   # モデル訓練（DuckDB DWH使用）- 全ブランチで実行
@@ -38,14 +75,14 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('configs/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r configs/requirements.txt
 
       - name: Create necessary directories
         run: |
@@ -55,6 +92,43 @@ jobs:
           mkdir -p src/ml/data/dwh/core
           mkdir -p src/ml/data/dwh/config
           mkdir -p src/ml/models/trained
+          mkdir -p logs
+          mkdir -p mlruns
+
+      - name: Initialize MLflow
+        run: |
+          # MLflowの環境変数を設定
+          export MLFLOW_TRACKING_URI="file:./mlruns"
+          export MLFLOW_EXPERIMENT_NAME="house_price_prediction"
+          
+          # MLflowの初期化
+          python -c "
+          import mlflow
+          import os
+          import sys
+          
+          try:
+              # MLflowの設定
+              mlflow.set_tracking_uri('file:./mlruns')
+              mlflow.set_experiment('house_price_prediction')
+              
+              print('✅ MLflow初期化完了')
+              print(f'📁 MLflow tracking URI: {mlflow.get_tracking_uri()}')
+              
+              # 実験の存在確認
+              experiment = mlflow.get_experiment_by_name('house_price_prediction')
+              if experiment:
+                  print(f'🔬 MLflow experiment ID: {experiment.experiment_id}')
+              else:
+                  print('⚠️  MLflow experiment not found, creating new one')
+                  mlflow.create_experiment('house_price_prediction')
+                  
+          except Exception as e:
+              print(f'⚠️  MLflow初期化エラー: {e}')
+              print('📝 MLflowなしで続行します')
+              # MLflowを無効化
+              os.environ['MLFLOW_DISABLE_TRACKING'] = 'true'
+          "
 
       - name: Create sample data
         run: |
@@ -87,11 +161,28 @@ jobs:
           import sys
           sys.path.insert(0, 'src')
           import duckdb
+          import pandas as pd
           
           # DuckDBに接続
           conn = duckdb.connect('src/ml/data/dwh/data/house_price_dwh.duckdb')
           
-          # シンプルなv_house_analyticsビューを作成（Bronze層のデータを直接使用）
+          # サンプルデータを作成
+          sample_data = pd.DataFrame({
+              'id': range(1, 11),
+              'sqft': [1500, 2000, 1200, 1800, 2200, 1600, 2400, 1400, 1900, 2100],
+              'bedrooms': [3, 4, 2, 3, 4, 3, 5, 2, 3, 4],
+              'bathrooms': [2, 3, 1, 2, 3, 2, 4, 1, 2, 3],
+              'year_built': [2010, 2015, 2008, 2012, 2018, 2011, 2020, 2009, 2013, 2017],
+              'location': ['Suburban', 'Urban', 'Rural', 'Suburban', 'Urban', 'Suburban', 'Urban', 'Rural', 'Suburban', 'Urban'],
+              'condition': ['Good', 'Excellent', 'Fair', 'Good', 'Excellent', 'Good', 'Excellent', 'Fair', 'Good', 'Excellent'],
+              'price': [300000, 450000, 200000, 350000, 500000, 320000, 550000, 180000, 380000, 480000]
+          })
+          
+          # サンプルデータをテーブルとして保存
+          conn.execute('DROP TABLE IF EXISTS bronze_raw_house_data')
+          conn.execute('CREATE TABLE bronze_raw_house_data AS SELECT * FROM sample_data')
+          
+          # シンプルなv_house_analyticsビューを作成
           conn.execute('''
             CREATE OR REPLACE VIEW v_house_analytics AS
             SELECT 
@@ -172,6 +263,13 @@ jobs:
           path: src/ml/data/dwh/data/house_price_dwh.duckdb
           retention-days: 30
 
+      - name: Upload MLflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlflow-artifacts-${{ github.sha }}
+          path: mlruns/
+          retention-days: 30
+
   # テスト実行（DuckDB DWH構築後のテスト）
   test:
     runs-on: ubuntu-latest
@@ -189,7 +287,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('configs/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
 
@@ -197,7 +295,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install pytest pytest-cov
-          pip install -r requirements.txt
+          pip install -r configs/requirements.txt
+
+      - name: Create necessary directories
+        run: |
+          mkdir -p logs
+          mkdir -p mlruns
 
       - name: Download model artifacts
         uses: actions/download-artifact@v4
@@ -211,9 +314,17 @@ jobs:
           name: duckdb-dwh-${{ github.sha }}
           path: src/ml/data/dwh/data/
 
+      - name: Download MLflow artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: mlflow-artifacts-${{ github.sha }}
+          path: mlruns/
+
       - name: Run tests
         run: |
+          # src/testsとtestsの両方のテストを実行
           pytest src/tests/test_ml_pipeline.py -v --cov=src --cov-report=xml --cov-report=html
+          pytest tests/unit/test_ml_pipeline.py -v --cov=src --cov-report=xml --cov-report=html
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
@@ -235,10 +346,23 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('configs/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r configs/requirements.txt
+
+      - name: Create necessary directories
+        run: |
+          mkdir -p logs
+          mkdir -p mlruns
 
       - name: Download model artifacts
         uses: actions/download-artifact@v4
@@ -251,6 +375,12 @@ jobs:
         with:
           name: duckdb-dwh-${{ github.sha }}
           path: src/ml/data/dwh/data/
+
+      - name: Download MLflow artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: mlflow-artifacts-${{ github.sha }}
+          path: mlruns/
 
       - name: Run model performance tests
         run: |
@@ -274,15 +404,15 @@ jobs:
           model = joblib.load('src/ml/models/trained/house_price_prediction.pkl')
           preprocessor = joblib.load('src/ml/models/trained/house_price_prediction_encoders.pkl')
           
-          # サンプルデータで予測
+          # サンプルデータで予測（DuckDBビューのカラム名を使用）
           sample = data.iloc[0:1]
           X = pd.DataFrame({
               'sqft': sample['sqft'],
               'bedrooms': sample['bedrooms'],
               'bathrooms': sample['bathrooms'],
               'house_age': sample['house_age'],
-              'price_per_sqft': sample['price'] / sample['sqft'],
-              'bed_bath_ratio': sample['bedrooms'] / sample['bathrooms'],
+              'price_per_sqft': sample['price_per_sqft'],
+              'bed_bath_ratio': sample['bed_bath_ratio'],
               'location': sample['location_name'],
               'condition': sample['condition_name']
           })
@@ -322,6 +452,12 @@ jobs:
           name: duckdb-dwh-${{ github.sha }}
           path: src/ml/data/dwh/data/
 
+      - name: Download MLflow artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: mlflow-artifacts-${{ github.sha }}
+          path: mlruns/
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
@@ -329,6 +465,7 @@ jobs:
             src/ml/models/trained/house_price_prediction.pkl
             src/ml/models/trained/house_price_prediction_encoders.pkl
             src/ml/data/dwh/data/house_price_dwh.duckdb
+            mlruns/
           body: |
             ## 🏠 House Price Prediction Model Release (DuckDB対応)
             

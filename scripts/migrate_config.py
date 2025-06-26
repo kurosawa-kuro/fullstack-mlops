@@ -91,11 +91,12 @@ def migrate_config():
         except Exception as e:
             logger.error(f"❌ {env} 環境設定作成エラー: {e}")
 
-def create_env_example():
-    """環境変数テンプレートを作成"""
+def create_env():
+    """環境変数ファイルを作成"""
     
-    logger.info("🔧 環境変数テンプレートを作成中...")
+    logger.info("🔧 環境変数ファイルを作成中...")
     
+    # 実際の環境変数ファイル（機密情報を含む）
     env_template = """# アプリケーション設定
 APP_NAME=House Price Predictor
 APP_VERSION=1.0.0
@@ -132,12 +133,56 @@ SECRET_KEY=your-secret-key-here
 DEBUG=false
 """
     
+    # テンプレートファイル（機密情報を含まない）
+    env_example_template = """# アプリケーション設定
+APP_NAME=House Price Predictor
+APP_VERSION=1.0.0
+APP_ENVIRONMENT=development
+
+# データベース設定
+DB_TYPE=duckdb
+DB_PATH=models/trained/house_price_dwh.duckdb
+
+# MLflow設定
+MLFLOW_TRACKING_URI=http://localhost:5555
+MLFLOW_EXPERIMENT_NAME=house_price_prediction
+
+# ログ設定
+LOG_LEVEL=INFO
+LOG_FORMAT=json
+LOG_FILE=logs/app.log
+
+# API設定
+API_HOST=0.0.0.0
+API_PORT=8000
+API_WORKERS=4
+
+# UI設定
+UI_HOST=0.0.0.0
+UI_PORT=8501
+
+# 監視設定
+MONITORING_ENABLED=true
+METRICS_PORT=9090
+
+# セキュリティ設定
+SECRET_KEY=your-secret-key-here
+DEBUG=false
+"""
+    
     try:
-        with open('.env.example', 'w') as f:
+        # .envファイルを作成
+        with open('.env', 'w') as f:
             f.write(env_template)
-        logger.info("✅ 環境変数テンプレート作成完了")
+        logger.info("✅ .envファイル作成完了")
+        
+        # .env.exampleファイルを作成
+        with open('.env.example', 'w') as f:
+            f.write(env_example_template)
+        logger.info("✅ .env.exampleファイル作成完了")
+        
     except Exception as e:
-        logger.error(f"❌ 環境変数テンプレート作成エラー: {e}")
+        logger.error(f"❌ 環境変数ファイル作成エラー: {e}")
 
 def create_pyproject_toml():
     """pyproject.tomlを作成"""
@@ -239,7 +284,7 @@ addopts = [
 if __name__ == "__main__":
     try:
         migrate_config()
-        create_env_example()
+        create_env()
         create_pyproject_toml()
         print("🎉 設定移行が正常に完了しました！")
     except Exception as e:
